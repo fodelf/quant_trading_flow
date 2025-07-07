@@ -9,14 +9,13 @@ from typing import List
 
 from quant_trading_flow.modules.deepseek import deepseek_llm
 from quant_trading_flow.crews.data_engineer.tools import data_tool
-from quant_trading_flow.crews.data_engineer.tools import data_base
 
 
 @CrewBase
 class DataEngineerCrew:
     """DataEngineer Crew"""
 
-    """获取基本面（公司经营状况，行业前景，财务指标，资产负债表，利润表，现金流量表），交易趋势（K线图，技术指标，成交量），舆情（新闻，社交媒体，论坛）----"""
+    """获取交易趋势（K线图，技术指标，成交量）----"""
     agents: List[BaseAgent]
     tasks: List[Task]
 
@@ -34,32 +33,8 @@ class DataEngineerCrew:
             config=self.agents_config["data_engineer"],  # type: ignore[index]
             verbose=True,
             llm=deepseek_llm,
+            max_retry_limit=3,
             tools=[data_tool.get_china_stock_data],
-        )
-
-    @agent
-    def government_affairs(self) -> Agent:
-        return Agent(
-            config=self.agents_config["government_affairs"],  # type: ignore[index]
-            verbose=True,
-            llm=deepseek_llm,
-        )
-
-    @agent
-    def public_sentiment(self) -> Agent:
-        return Agent(
-            config=self.agents_config["public_sentiment"],  # type: ignore[index]
-            verbose=True,
-            llm=deepseek_llm,
-        )
-
-    @agent
-    def data_analysis(self) -> Agent:
-        return Agent(
-            config=self.agents_config["data_analysis"],  # type: ignore[index]
-            verbose=True,
-            llm=deepseek_llm,
-            tools=[data_base.get_finance_data_str],
         )
 
     # To learn more about structured task outputs,
@@ -70,31 +45,6 @@ class DataEngineerCrew:
         return Task(
             config=self.tasks_config["data_task"],  # type: ignore[index]
             # context=[data_tool.get_china_stock_data()],
-            # output_file="output/data_report.md",
-            # output_file='output/data_report.html'
-        )
-
-    @task
-    def government_affairs_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["government_affairs_task"],  # type: ignore[index]
-            output_file="output/government_affairs.md",
-        )
-
-    @task
-    def public_sentiment_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["public_sentiment_task"],  # type: ignore[index]
-            output_file="output/public_sentiment.md",
-            # output_file='output/data_report.html'
-        )
-
-    @task
-    def data_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["data_analysis_task"],  # type: ignore[index]
-            # output_file="output/data_analysis.md",
-            # output_file='output/data_report.html'
         )
 
     @crew

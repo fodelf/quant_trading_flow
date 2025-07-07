@@ -1,0 +1,14 @@
+data_analysis_task:
+  description: >
+    分析股票{symbol}相关基本面数据，执行以下操作:
+    1. 根据股票代码{symbol}获取股票基本面信息
+    2. 数据质量评估
+        2.1 可靠性分析
+        2.2 可靠性分析
+    3. 评估财务健康状态
+    4. 评估行业竞争格局
+    5. 预测宏观经济周期
+  expected_output: >
+    输出股票{symbol}基本面的总结性报告（报告必须是中文）
+  agent: data_analysis
+  output_file: output/{symbol}/{file_date}/data_analysis.md

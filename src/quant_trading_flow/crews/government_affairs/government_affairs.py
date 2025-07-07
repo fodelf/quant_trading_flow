@@ -7,11 +7,14 @@ from typing import List
 # you can use the @before_kickoff and @after_kickoff decorators
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 
+from quant_trading_flow.modules.deepseek import deepseek_llm
+
 
 @CrewBase
-class PoemCrew:
-    """Poem Crew"""
+class GovernmentAffairsCrew:
+    """GovernmentAffairs Crew"""
 
+    """获取宏观政策与市场环境----"""
     agents: List[BaseAgent]
     tasks: List[Task]
 
@@ -24,23 +27,26 @@ class PoemCrew:
     # If you would lik to add tools to your crew, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
-    def poem_writer(self) -> Agent:
+    def government_affairs(self) -> Agent:
         return Agent(
-            config=self.agents_config["poem_writer"],  # type: ignore[index]
+            config=self.agents_config["government_affairs"],  # type: ignore[index]
+            verbose=True,
+            max_retry_limit=3,
+            llm=deepseek_llm,
         )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
     @task
-    def write_poem(self) -> Task:
+    def government_affairs_task(self) -> Task:
         return Task(
-            config=self.tasks_config["write_poem"],  # type: ignore[index]
+            config=self.tasks_config["government_affairs_task"],  # type: ignore[index]
         )
 
     @crew
     def crew(self) -> Crew:
-        """Creates the Research Crew"""
+        """Creates the Data Engineer Crew"""
         # To learn how to add knowledge sources to your crew, check out the documentation:
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
 
@@ -49,4 +55,5 @@ class PoemCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
+            llm=deepseek_llm,
         )

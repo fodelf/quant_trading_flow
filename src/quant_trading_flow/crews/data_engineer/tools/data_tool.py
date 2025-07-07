@@ -8,6 +8,7 @@ from io import BytesIO
 import base64
 import platform
 from crewai.tools import BaseTool
+import os
 
 
 def calculate_technical_indicators(
@@ -56,6 +57,7 @@ def calculate_technical_indicators(
     df["ATR"] = true_range.rolling(window=14).mean()
     # 重置索引（将索引变回普通列）
     df.reset_index(inplace=True)
+    os.makedirs(f"output/{symbol}/{file_date}", exist_ok=True)
     df.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
     return f"""
     数据总记录数:{len(df)}\n
@@ -115,7 +117,7 @@ def get_china_stock_data(
             df = ak.fund_etf_hist_em(
                 symbol=symbol, period="daily", start_date=start_date, end_date=end_date
             )
-
+            print(df.columns)
             # 数据清洗
             df.rename(
                 columns={
@@ -129,6 +131,7 @@ def get_china_stock_data(
                     "振幅": "Amplitude",
                     "涨跌幅": "Change",
                     "涨跌额": "ChangeAmount",
+                    "换手率": "TurnoverRate",
                 },
                 inplace=True,
             )

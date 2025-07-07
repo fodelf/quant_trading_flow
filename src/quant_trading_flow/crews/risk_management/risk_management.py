@@ -30,6 +30,7 @@ class RiskManagementCrew:
         return Agent(
             config=self.agents_config["risk_management"],  # type: ignore[index]
             llm=deepseek_llm,
+            max_retry_limit=3,
             tools=[
                 risk_management_tool.get_data_report,
                 risk_management_tool.get_data_analysis,

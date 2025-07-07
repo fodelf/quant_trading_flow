@@ -36,9 +36,10 @@ class StrategyDevelopmentCrew:
             config=self.agents_config["strategy_development"],  # type: ignore[index]
             verbose=True,
             llm=deepseek_llm,
+            max_retry_limit=3,
             tools=[
                 strategy_development_report.get_data_report,
-                strategy_development_report.get_data_analysis,
+                # strategy_development_report.get_data_analysis,
                 strategy_development_tool.optimize_for_high_return,
             ],
         )
@@ -51,7 +52,7 @@ class StrategyDevelopmentCrew:
         return Task(
             config=self.tasks_config["strategy_task"],  # type: ignore[index]
             # output_file='output/strategy_report.md'
-            output_file="output/strategy_report.md",
+            # output_file="output/strategy_report.md",
         )
 
     @crew

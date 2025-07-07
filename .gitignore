@@ -4,3 +4,4 @@ __pycache__/
 lib/
 .DS_Store
 output
+trade.csv

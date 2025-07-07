@@ -1,18 +1,19 @@
 risk_management_task:
   description: >
     分析股票{symbol}相关风险，执行以下操作:
-     1. 读取本地文件获取交易数据报告
+     1. 读取本地文件output/{symbol}/{file_date}/data_report.md，获取交易数据报告
         1.1总结交易数据报告内容，为风险报告做数据支撑
-     2. 读取本地文件获取基本面数据报告
+     2. 读取本地文件output/{symbol}/{file_date}/data_analysis.md，获取基本面数据报告
         2.1总结基本面数据报告内容，为风险报告做数据支撑
-     3. 读取本地文件获取政府政策与市场环境报告
+     3. 读取本地文件output/{symbol}/{file_date}/government_affairs.md，获取政府政策与市场环境报告
         3.1总结政府政策与市场环境报告内容，为风险报告做数据支撑
-     4. 读取本地文件获取市场舆情报告
+     4. 读取本地文件output/{symbol}/{file_date}/public_sentiment.md，获取市场舆情报告
         4.1总结市场舆情报告内容，为风险报告做数据支撑
-     5. 读取本地文件获取策略数据报告
+     5. 读取本地文件output/{symbol}/{file_date}/strategy_report.md，获取策略数据报告
         5.1总结策略数据报告内容，为风险报告做数据支撑
      6. 制定风险管理计划并监控风险执行
   expected_output: >
     输出股票{symbol}风险报告以及交易建议（报告必须是中文）
+    1.报告中必须包含同意买入或者拒绝买入
   agent: risk_management
   output_file: output/{symbol}/{file_date}/risk_management.md
