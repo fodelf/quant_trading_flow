@@ -9,6 +9,11 @@ from datetime import datetime
 
 from rich import console
 
+import re
+import json
+import os
+from typing import Union, List, Dict, Optional
+
 import pandas as pd
 import os
 
@@ -28,6 +33,11 @@ from quant_trading_flow.crews.strategy_development.strategy_development_crew imp
 )
 from quant_trading_flow.crews.risk_management.risk_management import RiskManagementCrew
 from quant_trading_flow.crews.cfo.cfo import CfoCrew
+from quant_trading_flow.crews.stock_screener.stock_screener import StockScreenerCrew
+import re
+import json
+from typing import Union, List, Dict, Optional
+import csv
 
 
 def append_number_to_csv(file_path, number):
@@ -203,9 +213,166 @@ def create_object(num):
     }
 
 
+def clean_json_string(json_str: str) -> str:
+    """
+    清理包含注释的 JSON 字符串
+
+    参数:
+        json_str: 包含注释的 JSON 字符串
+
+    返回:
+        清理后的标准 JSON 字符串
+    """
+    # 1. 移除单行注释 (// 开头的注释)
+    json_str = re.sub(r"//.*", "", json_str)
+
+    # 2. 移除多行注释 (/* ... */)
+    json_str = re.sub(r"/\*.*?\*/", "", json_str, flags=re.DOTALL)
+
+    # 3. 处理中文括号（将全角括号替换为半角）
+    json_str = json_str.replace("（", "(").replace("）", ")")
+
+    # 4. 替换单引号为双引号
+    json_str = json_str.replace("'", '"')
+
+    # 5. 移除尾随逗号（可能导致 JSON 解析错误）
+    json_str = re.sub(r",\s*([}\]])", r"\1", json_str)
+
+    # 6. 移除空白行
+    json_str = "\n".join(line for line in json_str.splitlines() if line.strip())
+
+    return json_str.strip()
+
+
+def extract_json_from_markdown(markdown_text: str) -> Optional[Union[Dict, List]]:
+    """
+    从Markdown文本中提取并解析JSON内容（支持带注释的JSON）
+
+    参数:
+        markdown_text: 包含JSON代码块的Markdown字符串
+
+    返回:
+        解析后的JSON对象 (dict或list)，若未找到有效JSON则返回None
+    """
+    # 匹配JSON代码块的正则表达式
+    pattern = r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```"
+
+    # 使用DOTALL标志匹配多行内容
+    match = re.search(pattern, markdown_text, re.DOTALL | re.IGNORECASE)
+
+    if not match:
+        # 尝试匹配无语言标签的代码块
+        pattern_unlabeled = r"```\s*(\{.*?\}|\[.*?\])\s*```"
+        match = re.search(pattern_unlabeled, markdown_text, re.DOTALL)
+        if not match:
+            return None
+
+    json_str = match.group(1).strip()
+
+    try:
+        # 清理非标准JSON内容
+        cleaned_json = clean_json_string(json_str)
+
+        # 解析JSON
+        return json.loads(cleaned_json)
+    except json.JSONDecodeError as e:
+        print(f"JSON解析错误: {e}")
+        print(f"问题内容: {json_str[:200]}...")  # 打印前200个字符
+        return None
+
+
+def read_csv_values(csv_path: str, column_name: str = "Value") -> List[str]:
+    """
+    从CSV文件中读取指定列的值
+
+    参数:
+        csv_path: CSV文件路径
+        column_name: 要读取的列名 (默认为"Value")
+
+    返回:
+        去重后的值列表
+    """
+    values = set()
+
+    if not os.path.exists(csv_path):
+        print(f"错误: 文件 '{csv_path}' 不存在")
+        return list(values)
+
+    try:
+        with open(csv_path, "r", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if column_name in row:
+                    value = row[column_name].strip()
+                    if value:  # 确保值不为空
+                        values.add(value)
+        return list(values)
+    except Exception as e:
+        print(f"读取CSV时出错: {e}")
+        return []
+
+
+def merge_stock_lists(
+    csv_values: List[str], json_stocks: List[str], format_codes: bool = True
+) -> List[str]:
+    """
+    合并并去重两个股票列表
+
+    参数:
+        csv_values: 从CSV读取的值列表
+        json_stocks: JSON中的股票列表
+        format_codes: 是否统一格式化股票代码
+
+    返回:
+        合并去重后的排序股票列表
+    """
+    # 创建集合用于去重
+    unique_stocks = set()
+
+    # 添加CSV值
+    for stock in csv_values:
+        if format_codes:
+            # 统一格式化为6位数字符串，不足补零
+            stock = stock.zfill(6)
+        unique_stocks.add(stock)
+
+    # 添加JSON股票
+    for stock in json_stocks:
+        if format_codes:
+            stock = stock.zfill(6)
+        unique_stocks.add(stock)
+
+    # 转换为列表并排序
+    sorted_stocks = sorted(unique_stocks)
+    return sorted_stocks
+
+
 def kickoff():
-    numbers = [600050, 600690]
-    symbols = list(map(create_object, numbers))
+    # results = (
+    #     StockScreenerCrew()
+    #     .crew()
+    #     .kickoff(inputs={"end_date": datetime.now().strftime("%Y%m%d")})
+    # )
+    with open(f"output/stock_screener.md", "r") as f:
+        stock_screener = f.read()
+    extract_json = extract_json_from_markdown(stock_screener)
+    stock_list = extract_json.get("stock_list", [])
+    csv_values = read_csv_values("trade.csv")
+    merged_list = merge_stock_lists(csv_values, stock_list)
+    # print(merged_list)
+    # numbers = [
+    #     "600031",
+    #     "000333",
+    #     "600309",
+    #     "601100",
+    #     "600588",
+    #     "600570",
+    #     "002415",
+    #     "600745",
+    #     "603986",
+    #     "688981",
+    # ]
+    symbols = list(map(create_object, merged_list))
     for item in symbols:
         TradingState.symbol = item["symbol"]
         TradingState.start_date = item["start_date"]

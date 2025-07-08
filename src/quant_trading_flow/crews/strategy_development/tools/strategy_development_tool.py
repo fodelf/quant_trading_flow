@@ -339,10 +339,10 @@ def high_return_strategy(df):
 
 # 9. 参数优化器 (确保年化收益>15%)
 # ================================
-@tool("交易策略处理")
+@tool("读取本地数据文件进行策略处理与回测")
 def optimize_for_high_return(symbol: str, file_date: str) -> str:
     """
-    读取本地数据进行策略处理
+    读取本地数据文件进行策略处理与回测
 
     Args:
       symbol (str): 股票代码
@@ -412,16 +412,16 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
                 annualized_return = enhanced_return
     print("输出报告")
     return f"""
-    最终资产:{final_value}\n
-    总收益率:{total_return*100:.2f}%\n
-    年化收益率:{annualized_return*100:.2f}%\n
-    最大回撤阈值:{max_drawdown*100}%\n
-    买入资金比例:{position_ratio*100}%\n
-    最大持仓比例:{max_position_ratio*100}%\n
-    最小持仓比例:{min_position_ratio*100}%\n
+    最终资产:{final_value}；总收益率:{total_return*100:.2f}% ；年化收益率:{annualized_return*100:.2f}%；最大回撤阈值:{max_drawdown*100}%；买入资金比例:{position_ratio*100}%；最大持仓比例:{max_position_ratio*100}%；最小持仓比例:{min_position_ratio*100}%\n
+    策略核心代码：
+      df["Trend_Signal"] = np.where(df["MA10"] > df["MA50"], 1, 0)
+      df["Momentum_Signal"] = np.where((df["RSI"] > 50) & (df["Momentum"] > 0.02), 1, 0)
+      df["MACD_Signal"] = np.where(df["MACD"] > df["MACD_Signal"], 1, 0)
+      df["Signal"] = np.where((df["Trend_Signal"] == 1) & (df["Momentum_Signal"] == 1)& (df["MACD_Signal"] == 1),1,0,)
+      df["Position"] = df["Signal"].diff()
+      df["Stop_Loss"] = df["Close"] - 1.5 * df["ATR"]\n
     交易明细： {','.join(trade_details)}
     """
-    # return final_value, total_return, trade_log, portfolio_df, trade_details
 
 
 def adjust_strategy_parameters(df):

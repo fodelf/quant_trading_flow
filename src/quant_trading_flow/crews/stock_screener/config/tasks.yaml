@@ -1,0 +1,12 @@
+stock_screener_task:
+  description: >
+    当前时间是{end_date}，根据中国最新的政策变化和相关新闻，筛选符合中国经济增长预期的沪深成分股的股票。
+    1.筛选条件：市值>50亿，PE<20，近季度营收增长>15%，股价 < 30元
+    2.技术面：50日均线>200日均线，RSI<60
+    4.基本面：盈利增长>10%，资产负债率<60%
+    5.输出至少15只股票代码
+  expected_output: >
+    输出股票代码列表
+    1.股票代码列表以json形式输出类似{"stock_list":['600690']}
+  agent: stock_screener
+  output_file: output/stock_screener.md

@@ -1,17 +1,17 @@
 cfo_task:
   description: >
-    分析股票{symbol}相关交易风险，执行以下操作:
-        1. 读取本地文件output/{symbol}/{file_date}/data_report.md，获取交易数据报告
+    做出股票{symbol}交易决策，执行以下操作:
+     1. 输入{symbol},{file_date}，读取本地文件获取交易数据报告
         1.1总结交易数据报告内容，为风险报告做数据支撑
-     2. 读取本地文件output/{symbol}/{file_date}/data_analysis.md，获取基本面数据报告
+     2. 输入{symbol},{file_date}，读取本地文件获取基本面数据报告  
         2.1总结基本面数据报告内容，为风险报告做数据支撑
-     3. 读取本地文件output/{symbol}/{file_date}/government_affairs.md，获取政府政策与市场环境报告
+     3. 输入{symbol},{file_date}，读取本地文件获取政府政策与市场环境报告 
         3.1总结政府政策与市场环境报告内容，为风险报告做数据支撑
-     4. 读取本地文件output/{symbol}/{file_date}/public_sentiment.md，获取市场舆情报告
+     4. 输入{symbol},{file_date}，读取本地文件获取市场舆情报告
         4.1总结市场舆情报告内容，为风险报告做数据支撑
-     5. 读取本地文件output/{symbol}/{file_date}/strategy_report.md，获取策略数据报告
+     5. 输入{symbol},{file_date}，读取本地文件获取策略数据报告
         5.1总结策略数据报告内容，为风险报告做数据支撑
-     6. 读取本地文件output/{symbol}/{file_date}/risk_management.md，获取风险数据报告
+     6. 输入{symbol},{file_date}，读取本地文件获取风险数据报告
         6.1总结风险数据报告内容，为风险报告做数据支撑
      7.根据以上所有报告内容，给出交易评估报告
        7.1对于交易评估报告内容进行分析，包含一致性评分，关键矛盾点，数据可信度
@@ -25,5 +25,6 @@ cfo_task:
     1.包含交易数据报告，基本面数据报告，政府政策与市场环境报告，市场舆情报告，策略数据报告，风险数据报告每一份报告的总结与决策
     2.包含交易指令，止赢指令，止损指令，建议理由
     3.报告中必须包含同意买入或者拒绝买入
+    4.以股票代码加股票中文名称加交易评估报告加日期作为标题
   agent: cfo
   output_file: output/{symbol}/{file_date}/cfo.md
