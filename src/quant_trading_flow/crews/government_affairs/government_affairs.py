@@ -31,7 +31,8 @@ class GovernmentAffairsCrew:
         return Agent(
             config=self.agents_config["government_affairs"],  # type: ignore[index]
             verbose=True,
-            max_retry_limit=3,
+            max_retry_limit=5,
+            max_execution_time=600,
             llm=deepseek_llm,
         )
 

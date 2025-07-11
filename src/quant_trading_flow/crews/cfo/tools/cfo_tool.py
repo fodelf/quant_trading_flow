@@ -1,10 +1,11 @@
 from crewai.tools import tool
+import time
 
 
-@tool("读取本地文件获取交易数据报告")
+@tool("获取交易数据报告工具")
 def get_data_report(symbol: str, file_date: str) -> str:
     """
-    读取本地文件获取交易数据报告
+    获取股票{symbol}交易数据报告
 
     Args:
         symbol (str): 股票代码
@@ -18,10 +19,10 @@ def get_data_report(symbol: str, file_date: str) -> str:
     return data_report
 
 
-@tool("读取本地文件获取基本面数据报告")
+@tool("获取基本面数据报告工具")
 def get_data_analysis(symbol: str, file_date: str) -> str:
     """
-    读取本地文件获取基本面数据报告
+    获取股票{symbol}基本面数据报告
 
     Args:
         symbol (str): 股票代码
@@ -30,15 +31,16 @@ def get_data_analysis(symbol: str, file_date: str) -> str:
     Returns:
         str: 返回基本面数据报告字符串
     """
+    time.sleep(0.5)
     with open(f"output/{symbol}/{file_date}/data_analysis.md", "r") as f:
         data_analysis = f.read()
     return data_analysis
 
 
-@tool("读取本地文件获取政府政策与市场环境报告")
+@tool("获取政府政策与市场环境报告工具")
 def get_government_affairs(symbol: str, file_date: str) -> str:
     """
-    读取本地文件获取政府政策与市场环境报告
+    获取股票{symbol}政府政策与市场环境数据报告
 
     Args:
         symbol (str): 股票代码
@@ -52,10 +54,10 @@ def get_government_affairs(symbol: str, file_date: str) -> str:
     return government_affairs
 
 
-@tool("读取本地文件获取市场舆情报告")
+@tool("获取市场舆情报告工具")
 def get_public_sentiment(symbol: str, file_date: str) -> str:
     """
-    读取本地文件获取市场舆情报告
+    获取股票{symbol}市场舆情数据报告
 
     Args:
         symbol (str): 股票代码
@@ -69,10 +71,10 @@ def get_public_sentiment(symbol: str, file_date: str) -> str:
     return public_sentiment
 
 
-@tool("读取本地文件获取策略数据报告")
+@tool("获取策略数据报告工具")
 def get_strategy_report(symbol: str, file_date: str) -> str:
     """
-    读取本地文件获取策略数据报告
+    获取股票{symbol}策略数据报告
 
     Args:
         symbol (str): 股票代码
@@ -86,10 +88,10 @@ def get_strategy_report(symbol: str, file_date: str) -> str:
     return strategy_report
 
 
-@tool("读取本地文件获取风险数据报告")
+@tool("获取风险数据报告工具")
 def get_risk_report(symbol: str, file_date: str) -> str:
     """
-    读取本地文件获取风险数据报告
+    获取股票{symbol}风险数据报告
 
     Args:
         symbol (str): 股票代码

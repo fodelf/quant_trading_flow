@@ -33,7 +33,8 @@ class DataEngineerCrew:
             config=self.agents_config["data_engineer"],  # type: ignore[index]
             verbose=True,
             llm=deepseek_llm,
-            max_retry_limit=3,
+            max_retry_limit=5,
+            max_execution_time=600,
             tools=[data_tool.get_china_stock_data],
         )
 

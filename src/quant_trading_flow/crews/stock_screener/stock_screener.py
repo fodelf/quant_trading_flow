@@ -8,6 +8,9 @@ from typing import List
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 
 from quant_trading_flow.modules.deepseek import deepseek_llm
+from quant_trading_flow.crews.stock_screener.tools.stock_screener_tool import (
+    get_filtered_stocks,
+)
 
 
 @CrewBase
@@ -31,8 +34,10 @@ class StockScreenerCrew:
         return Agent(
             config=self.agents_config["stock_screener"],  # type: ignore[index]
             verbose=True,
-            max_retry_limit=3,
+            max_retry_limit=5,
+            max_execution_time=600,
             llm=deepseek_llm,
+            tools=[get_filtered_stocks],
         )
 
     # To learn more about structured task outputs,

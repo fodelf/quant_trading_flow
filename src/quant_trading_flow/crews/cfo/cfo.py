@@ -30,14 +30,15 @@ class CfoCrew:
         return Agent(
             config=self.agents_config["cfo"],  # type: ignore[index]
             llm=deepseek_llm,
-            max_retry_limit=3,
+            max_retry_limit=5,
+            max_execution_time=600,
             tools=[
+                cfo_tool.get_risk_report,
                 cfo_tool.get_data_report,
                 cfo_tool.get_data_analysis,
                 cfo_tool.get_government_affairs,
                 cfo_tool.get_public_sentiment,
                 cfo_tool.get_strategy_report,
-                cfo_tool.get_risk_report,
             ],
         )
 

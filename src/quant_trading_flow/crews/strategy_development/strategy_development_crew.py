@@ -36,7 +36,8 @@ class StrategyDevelopmentCrew:
             config=self.agents_config["strategy_development"],  # type: ignore[index]
             verbose=True,
             llm=deepseek_llm,
-            max_retry_limit=3,
+            max_retry_limit=5,
+            max_execution_time=600,
             tools=[
                 strategy_development_report.get_data_report,
                 # strategy_development_report.get_data_analysis,

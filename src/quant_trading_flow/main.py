@@ -16,7 +16,7 @@ from typing import Union, List, Dict, Optional
 
 import pandas as pd
 import os
-
+import time
 from quant_trading_flow.crews.data_engineer.data_engineer import DataEngineerCrew
 from quant_trading_flow.crews.fundamental_analysis.fundamental_analysis import (
     FundamentalAnalysisCrew,
@@ -38,6 +38,9 @@ import re
 import json
 from typing import Union, List, Dict, Optional
 import csv
+from quant_trading_flow.crews.stock_screener.tools.stock_screener_tool import (
+    get_filtered_stocks,
+)
 
 
 def append_number_to_csv(file_path, number):
@@ -94,80 +97,81 @@ class TradingFlow(Flow[TradingState]):
             "file_date": self.state.file_date,
         }
 
-    @listen(init_market_data)
-    def handle_data(self, market_data):
-        result = DataEngineerCrew().crew().kickoff(inputs=market_data)
-        return result.raw
+        # @listen(init_market_data)
+        # def handle_data(self, market_data):
+        #     result = DataEngineerCrew().crew().kickoff(inputs=market_data)
+        #     return result.raw
 
-    @listen(init_market_data)
-    def fundamental_analysis(self, market_data):
-        result = FundamentalAnalysisCrew().crew().kickoff(inputs=market_data)
-        return result.raw
+        # @listen(init_market_data)
+        # def fundamental_analysis(self, market_data):
+        #     result = FundamentalAnalysisCrew().crew().kickoff(inputs=market_data)
+        #     return result.raw
 
-    @listen(init_market_data)
-    def government_affairs(self, market_data):
-        result = GovernmentAffairsCrew().crew().kickoff(inputs=market_data)
-        return result.raw
+        # @listen(init_market_data)
+        # def government_affairs(self, market_data):
+        #     result = GovernmentAffairsCrew().crew().kickoff(inputs=market_data)
+        #     return result.raw
 
-    @listen(init_market_data)
-    def public_sentiment(self, market_data):
-        result = PublicSentimentCrew().crew().kickoff(inputs=market_data)
-        return result.raw
+        # @listen(init_market_data)
+        # def public_sentiment(self, market_data):
+        #     result = PublicSentimentCrew().crew().kickoff(inputs=market_data)
+        #     return result.raw
 
-    @listen(handle_data)
-    def strategy_development(self):
-        print(self.state.file_date)
-        result = (
-            StrategyDevelopmentCrew()
-            .crew()
-            .kickoff(
-                inputs={
-                    "symbol": self.state.symbol,
-                    "start_date": self.state.start_date,
-                    "end_date": self.state.end_date,
-                    "file_date": self.state.file_date,
-                }
-            )
-        )
-        return result.raw
+        # @listen(handle_data)
+        # def strategy_development(self):
+        #     print(self.state.file_date)
+        #     result = (
+        #         StrategyDevelopmentCrew()
+        #         .crew()
+        #         .kickoff(
+        #             inputs={
+        #                 "symbol": self.state.symbol,
+        #                 "start_date": self.state.start_date,
+        #                 "end_date": self.state.end_date,
+        #                 "file_date": self.state.file_date,
+        #             }
+        #         )
+        #     )
+        #     return result.raw
 
-    @listen(
-        and_(
-            strategy_development,
-            public_sentiment,
-            fundamental_analysis,
-            government_affairs,
-        )
-    )
-    def risk_management(self):
-        result = (
-            RiskManagementCrew()
-            .crew()
-            .kickoff(
-                inputs={
-                    "symbol": self.state.symbol,
-                    "start_date": self.state.start_date,
-                    "end_date": self.state.end_date,
-                    "file_date": self.state.file_date,
-                }
-            )
-        )
-        self.state.risk_approval_flag = "同意买入" in result.raw
-        return result.raw
+        # @listen(
+        #     and_(
+        #         strategy_development,
+        #         public_sentiment,
+        #         fundamental_analysis,
+        #         government_affairs,
+        #     )
+        # )
+        # def risk_management(self):
+        #     result = (
+        #         RiskManagementCrew()
+        #         .crew()
+        #         .kickoff(
+        #             inputs={
+        #                 "symbol": self.state.symbol,
+        #                 "start_date": self.state.start_date,
+        #                 "end_date": self.state.end_date,
+        #                 "file_date": self.state.file_date,
+        #             }
+        #         )
+        #     )
+        #     self.state.risk_approval_flag = "同意买入" in result.raw
+        #     return result.raw
 
-    @router(risk_management)
-    def risk_approval(self):
-        if self.state.risk_approval_flag:
-            return "risk_approval_pass"
-        else:
-            return "approval_reject"
+        # @router(risk_management)
+        # def risk_approval(self):
+        #     if self.state.risk_approval_flag:
+        #         return "risk_approval_pass"
+        #     else:
+        #         return "approval_reject"
 
-    @router("risk_approval_pass")
-    def pass_risk_approval(self):
+        # @router("risk_approval_pass")
+        # def pass_risk_approval(self):
         print("分析风险，通过")
         return "pass_risk_approval"
 
-    @listen(pass_risk_approval)
+    # @listen(pass_risk_approval)
+    @listen(init_market_data)
     def trade_management(self):
         result = (
             CfoCrew()
@@ -191,17 +195,17 @@ class TradingFlow(Flow[TradingState]):
         else:
             return "approval_reject"
 
-    @listen("trade_approval_pass")
-    def trade(self):
-        print("允许交易")
-        csv_file = "trade.csv"
-        append_number_to_csv(csv_file, self.state.symbol)
-        return "trade"
+    # @listen("trade_approval_pass")
+    # def trade(self):
+    #     print("允许交易")
+    #     csv_file = "trade.csv"
+    #     append_number_to_csv(csv_file, self.state.symbol)
+    #     return "trade"
 
-    @listen("approval_reject")
-    def reject_approval(self):
-        print("交易不通过")
-        return "reject_approval"
+    # @listen("approval_reject")
+    # def reject_approval(self):
+    #     print("交易不通过")
+    #     return "reject_approval"
 
 
 def create_object(num):
@@ -209,7 +213,8 @@ def create_object(num):
         "symbol": num,
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
-        "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
+        "file_date": "20250711220526",
+        # "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
     }
 
 
@@ -347,39 +352,31 @@ def merge_stock_lists(
     return sorted_stocks
 
 
-def kickoff():
-    # results = (
-    #     StockScreenerCrew()
-    #     .crew()
-    #     .kickoff(inputs={"end_date": datetime.now().strftime("%Y%m%d")})
-    # )
-    with open(f"output/stock_screener.md", "r") as f:
-        stock_screener = f.read()
-    extract_json = extract_json_from_markdown(stock_screener)
-    stock_list = extract_json.get("stock_list", [])
-    csv_values = read_csv_values("trade.csv")
-    merged_list = merge_stock_lists(csv_values, stock_list)
-    # print(merged_list)
-    # numbers = [
-    #     "600031",
-    #     "000333",
-    #     "600309",
-    #     "601100",
-    #     "600588",
-    #     "600570",
-    #     "002415",
-    #     "600745",
-    #     "603986",
-    #     "688981",
-    # ]
-    symbols = list(map(create_object, merged_list))
-    for item in symbols:
+def runTask(list):
+    for item in list:
         TradingState.symbol = item["symbol"]
         TradingState.start_date = item["start_date"]
         TradingState.end_date = item["end_date"]
         TradingState.file_date = item["file_date"]
         trading_flow = TradingFlow()
         trading_flow.kickoff()
+
+
+def kickoff():
+    # csv_values = read_csv_values("trade.csv")
+    # csv_values_symbols = list(map(create_object, csv_values))
+    # runTask(csv_values_symbols)
+    # result = (
+    #     StockScreenerCrew()
+    #     .crew()
+    #     .kickoff(inputs={"end_date": datetime.now().strftime("%Y%m%d")})
+    # )
+    # extract_json = extract_json_from_markdown(result.raw)
+    # stock_list = extract_json.get("stock_list", [])
+    # new_list = [stock for stock in stock_list if stock not in csv_values]
+    new_list = ["600031"]
+    symbols = list(map(create_object, new_list))
+    runTask(symbols)
 
 
 def plot():

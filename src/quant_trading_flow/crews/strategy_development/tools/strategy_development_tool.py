@@ -412,7 +412,7 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
                 annualized_return = enhanced_return
     print("输出报告")
     return f"""
-    最终资产:{final_value}；总收益率:{total_return*100:.2f}% ；年化收益率:{annualized_return*100:.2f}%；最大回撤阈值:{max_drawdown*100}%；买入资金比例:{position_ratio*100}%；最大持仓比例:{max_position_ratio*100}%；最小持仓比例:{min_position_ratio*100}%\n
+    最终资产:{final_value}；总收益率:{total_return*100:.2f}%；年化收益率:{annualized_return*100:.2f}%；最大回撤阈值:{max_drawdown*100}%；买入资金比例:{position_ratio*100}%；最大持仓比例:{max_position_ratio*100}%；最小持仓比例:{min_position_ratio*100}%\n
     策略核心代码：
       df["Trend_Signal"] = np.where(df["MA10"] > df["MA50"], 1, 0)
       df["Momentum_Signal"] = np.where((df["RSI"] > 50) & (df["Momentum"] > 0.02), 1, 0)

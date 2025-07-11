@@ -19,7 +19,7 @@ def get_finance_data_str(symbol: str):
     根据股票代码获取股票基本面信息
 
     Args:
-        stock_code (str): 股票代码，期望以"000001.SZ"格式传入
+        stock_code (str): 股票代码
     Returns:
         str: 当前股票基本面格式信息
     """
