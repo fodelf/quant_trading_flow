@@ -11,8 +11,8 @@ from quant_trading_flow.crews.risk_management.tools import risk_management_tool
 
 
 @CrewBase
-class RiskManagementCrew:
-    """RiskManagement Crew"""
+class RiskHasManagementCrew:
+    """RiskHasManagement Crew"""
 
     agents: List[BaseAgent]
     tasks: List[Task]
@@ -78,7 +78,7 @@ class RiskManagementCrew:
     @task
     def risk_management_task(self) -> Task:
         return Task(
-            config=self.tasks_config["risk_management_task"],  # type: ignore[index]
+            config=self.tasks_config["risk_has_management_task"],  # type: ignore[index]
             context=[
                 self.risk_management_data_analysis_task(),
                 self.risk_management_fundamental_analysis_task(),
@@ -90,7 +90,7 @@ class RiskManagementCrew:
 
     @crew
     def crew(self) -> Crew:
-        """RiskManagement Crew"""
+        """RiskHasManagement Crew"""
         # To learn how to add knowledge sources to your crew, check out the documentation:
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
 

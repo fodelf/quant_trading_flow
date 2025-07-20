@@ -339,7 +339,7 @@ def high_return_strategy(df):
 
 # 9. 参数优化器 (确保年化收益>15%)
 # ================================
-@tool("读取本地数据文件进行策略处理与回测")
+@tool("读取本地数据文件进行策略处理与回测工具")
 def optimize_for_high_return(symbol: str, file_date: str) -> str:
     """
     读取本地数据文件进行策略处理与回测

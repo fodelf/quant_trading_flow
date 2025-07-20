@@ -13,7 +13,7 @@ import requests
 import json
 
 
-@tool("根据股票代码获取股票基本面信息")
+@tool("根据股票代码获取股票基本面信息工具")
 def get_finance_data_str(symbol: str):
     """
     根据股票代码获取股票基本面信息

@@ -1,7 +1,7 @@
 from crewai.tools import tool
 
 
-@tool("读取本地文件获取交易数据报告")
+@tool("读取本地文件获取交易数据报告工具")
 def get_data_report(symbol: str, file_date: str) -> str:
     """
     读取本地文件获取交易数据报告

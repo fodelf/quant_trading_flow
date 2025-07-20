@@ -34,7 +34,7 @@ class DataEngineerCrew:
             verbose=True,
             llm=deepseek_llm,
             max_retry_limit=5,
-            max_execution_time=600,
+            max_execution_time=1800,
             tools=[data_tool.get_china_stock_data],
         )
 
@@ -42,10 +42,16 @@ class DataEngineerCrew:
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
     @task
+    def get_data_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["get_data_task"],  # type: ignore[index]
+        )
+
+    @task
     def data_task(self) -> Task:
         return Task(
             config=self.tasks_config["data_task"],  # type: ignore[index]
-            # context=[data_tool.get_china_stock_data()],
+            context=[self.get_data_task()],
         )
 
     @crew
@@ -59,5 +65,6 @@ class DataEngineerCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            llm=deepseek_llm,
+            planning=True,
+            planning_llm=deepseek_llm,
         )

@@ -92,7 +92,7 @@ def generate_sample_data(symbol: str, file_date: str):
     return df
 
 
-@tool("获取相关股票交易数据")
+@tool("获取相关股票交易数据工具")
 def get_china_stock_data(
     symbol: str, start_date: str, end_date: str, file_date: str
 ) -> str:

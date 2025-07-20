@@ -37,7 +37,7 @@ class StrategyDevelopmentCrew:
             verbose=True,
             llm=deepseek_llm,
             max_retry_limit=5,
-            max_execution_time=600,
+            max_execution_time=1800,
             tools=[
                 strategy_development_report.get_data_report,
                 # strategy_development_report.get_data_analysis,
@@ -49,11 +49,25 @@ class StrategyDevelopmentCrew:
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
     @task
+    def strategy_data_analysis_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["strategy_data_analysis_task"],  # type: ignore[index]
+        )
+
+    @task
+    def strategy_development_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["strategy_development_task"],  # type: ignore[index]
+        )
+
+    @task
     def strategy_task(self) -> Task:
         return Task(
             config=self.tasks_config["strategy_task"],  # type: ignore[index]
-            # output_file='output/strategy_report.md'
-            # output_file="output/strategy_report.md",
+            context=[
+                self.strategy_data_analysis_task(),
+                self.strategy_development_task(),
+            ],
         )
 
     @crew
@@ -67,5 +81,6 @@ class StrategyDevelopmentCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            llm=deepseek_llm,
+            planning=True,
+            planning_llm=deepseek_llm,
         )

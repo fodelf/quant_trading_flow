@@ -32,7 +32,7 @@ class PublicSentimentCrew:
             config=self.agents_config["public_sentiment"],  # type: ignore[index]
             verbose=True,
             max_retry_limit=5,
-            max_execution_time=600,
+            max_execution_time=1800,
             llm=deepseek_llm,
         )
 

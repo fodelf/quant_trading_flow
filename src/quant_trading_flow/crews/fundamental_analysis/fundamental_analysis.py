@@ -34,19 +34,25 @@ class FundamentalAnalysisCrew:
             verbose=True,
             llm=deepseek_llm,
             max_retry_limit=5,
-            max_execution_time=600,
+            max_execution_time=1800,
             tools=[data_base.get_finance_data_str],
         )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
+
+    @task
+    def get_data_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["get_data_task"],  # type: ignore[index]
+        )
+
     @task
     def data_analysis_task(self) -> Task:
         return Task(
             config=self.tasks_config["data_analysis_task"],  # type: ignore[index]
-            # output_file="output/data_analysis.md",
-            # output_file='output/data_report.html'
+            context=[self.get_data_task()],
         )
 
     @crew
@@ -60,5 +66,6 @@ class FundamentalAnalysisCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            llm=deepseek_llm,
+            planning=True,
+            planning_llm=deepseek_llm,
         )

@@ -14,8 +14,8 @@ from quant_trading_flow.crews.cfo.tools import cfo_tool
 
 
 @CrewBase
-class CfoCrew:
-    """CFO Crew"""
+class CfoHasCrew:
+    """CfoHas Crew"""
 
     agents: List[BaseAgent]
     tasks: List[Task]
@@ -87,13 +87,13 @@ class CfoCrew:
     @task
     def cfo_task(self) -> Task:
         return Task(
-            config=self.tasks_config["cfo_task"],
+            config=self.tasks_config["cfo_task_has"],
             context=[self.cfo_data_analysis_task(), self.cfo_fundamental_analysis_task(), self.cfo_policy_analysis_task(), self.cfo_sentiment_analysis_task(), self.cfo_strategy_analysis_task(), self.cfo_risk_analysis_task()],  # type: ignore[index]
         )
 
     @crew
     def crew(self) -> Crew:
-        """Cfo Crew"""
+        """CfoHas Crew"""
         # To learn how to add knowledge sources to your crew, check out the documentation:
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
         custom_storage_path = "./storage"

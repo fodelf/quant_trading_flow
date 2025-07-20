@@ -1,7 +1,7 @@
 from crewai.tools import tool
 
 
-@tool("读取本地文件获取交易数据报告")
+@tool("读取本地文件获取交易数据报告工具")
 def get_data_report(symbol: str, file_date: str) -> str:
     """
     读取本地文件获取交易数据报告
@@ -18,7 +18,7 @@ def get_data_report(symbol: str, file_date: str) -> str:
     return data_report
 
 
-@tool("读取本地文件获取基本面数据报告")
+@tool("读取本地文件获取基本面数据报告工具")
 def get_data_analysis(symbol: str, file_date: str) -> str:
     """
     读取本地文件获取基本面数据报告
@@ -35,7 +35,7 @@ def get_data_analysis(symbol: str, file_date: str) -> str:
     return data_analysis
 
 
-@tool("读取本地文件获取政府政策与市场环境报告")
+@tool("读取本地文件获取政府政策与市场环境报告工具")
 def get_government_affairs(symbol: str, file_date: str) -> str:
     """
     读取本地文件获取政府政策与市场环境报告
@@ -52,7 +52,7 @@ def get_government_affairs(symbol: str, file_date: str) -> str:
     return government_affairs
 
 
-@tool("读取本地文件获取市场舆情报告")
+@tool("读取本地文件获取市场舆情报告工具")
 def get_public_sentiment(symbol: str, file_date: str) -> str:
     """
     读取本地文件获取市场舆情报告
@@ -69,7 +69,7 @@ def get_public_sentiment(symbol: str, file_date: str) -> str:
     return public_sentiment
 
 
-@tool("读取本地文件获取策略数据报告")
+@tool("读取本地文件获取策略数据报告工具")
 def get_strategy_report(symbol: str, file_date: str) -> str:
     """
     读取本地文件获取策略数据报告

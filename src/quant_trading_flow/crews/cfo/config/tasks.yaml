@@ -1,20 +1,71 @@
+cfo_data_analysis_task:
+  description: >
+    "任务一：必须使用【获取交易数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告。"
+  expected_output: >
+    输出股票{symbol}交易数据报告
+  agent: cfo
+
+cfo_fundamental_analysis_task:
+  description: >
+    "任务二：必须使用【获取基本面数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}基本面数据报告。"
+  expected_output: >
+    输出股票{symbol}的基本面数据报告
+  agent: cfo
+
+cfo_policy_analysis_task:
+  description: >
+    "任务三：必须使用【获取政府政策与市场环境报告工具】，参数为{symbol},{file_date}，获取股票{symbol}政府政策与市场环境报告。"
+  expected_output: >
+    输出股票{symbol}的政府政策与市场环境报告
+  agent: cfo
+
+cfo_sentiment_analysis_task:
+  description: >
+    "任务四：必须使用【获取市场舆情报告工具】，参数为{symbol},{file_date}，获取股票{symbol}市场舆情报报告。"
+  expected_output: >
+    输出股票{symbol}的市场舆情报报告
+  agent: cfo
+
+cfo_strategy_analysis_task:
+  description: >
+    "任务五：必须使用【获取策略数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}的策略数据报告。"
+  expected_output: >
+    输出股票{symbol}策略数据报告
+  agent: cfo
+
+cfo_risk_analysis_task:
+  description: >
+    "任务六：必须使用【获取风险数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}的风险数据报告。"
+  expected_output: >
+    输出股票{symbol}风险数据报告
+  agent: cfo
+
 cfo_task:
   description: >
-    "分析股票{symbol}给出交易评估报告，必须按顺序执行以下八个步骤。"
-    "第一步：必须使用【获取交易数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告，成功后执行第二步。"
-    "第二步：必须使用【获取基本面数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}基本面数据报告，成功后执行第三步。"
-    "第三步：必须使用【获取政府政策与市场环境报告工具】，参数为{symbol},{file_date}，获取股票{symbol}政府政策与市场环境报告，成功后执行第四步。"
-    "第四步：必须使用【获取市场舆情报告工具】，参数为{symbol},{file_date}，获取股票{symbol}市场舆情报告，成功后执行第五步。"
-    "第五步：必须使用【获取风险数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}风险数据报告，成功后执行第六步。"
-    "第六步：必须使用【获取策略数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}策略数据报告，成功后执行第七步。"
-    "第七步：给出六份报告的总结，以此为依据得出交易评估报告，对于交易评估报告内容进行分析，包含一致性评分，关键矛盾点，数据可信度，计算风险调整后收益(Sharpe > 1.5才通过)，之后执行第八步。"
-    "第八步：根据分析结果，生成目标{symbol}交易指令，交易建议。"
+    "任务七：分析股票{symbol}给出交易评估报告。"
+    "1：根据交易数据报告、基本面数据报告、市场舆情报报告、政府政策与市场环境报告、策略数据报告、风险数据报告，给出交易评估报告。"
+    "2：对于交易评估报告内容进行分析，包含一致性评分，关键矛盾点，数据可信度，计算风险调整后收益(Sharpe > 1.5才通过)。"
+    "3：根据分析结果，生成目标{symbol}股票交易指令，交易建议。"
   expected_output: >
     输出股票{symbol}交易评估报告以及包含入场点、止损位、目标价和仓位大小的完整交易计划（报告必须是中文）
     1.生成交易指令（一定要以最近5日交易数据为基准,未来一周内预期收益高于百分之3设定当前买入，短期观望指令）：{标的代码, 方向, 价格区间, 有效期 }
     2.止赢交易指令（一定要以最近5日交易数据为基准,止赢价格不能跟止损价格一样）：{标的代码, 止赢价格区间, 有效期 }
     3.止损交易指令（一定要以最近5日交易数据为基准,止损价格不能跟止赢价格一样）：{标的代码, 止损价格区间, 有效期 }
     4.报告中必须包含同意买入或者拒绝买入
+    5.以股票代码加股票中文名称加交易评估报告加日期作为标题
+  agent: cfo
+  output_file: output/{symbol}/{file_date}/cfo.md
+
+cfo_task_has:
+  description: >
+    "任务七：分析股票{symbol}给出交易评估报告。"
+    "1：根据交易数据报告、基本面数据报告、市场舆情报报告、政府政策与市场环境报告、策略数据报告、风险数据报告，给出交易评估报告。"
+    "2：对于交易评估报告内容进行分析，包含一致性评分，关键矛盾点，数据可信度，计算风险调整后收益(Sharpe > 1.5才通过)。"
+    "3：根据分析结果，当前股票成本价是{current_price}，对比最新五日数据，生成目标{symbol}股票交易指令，交易建议。"
+  expected_output: >
+    输出股票{symbol}交易评估报告（报告必须是中文）
+    1.一定要以最近5日交易数据为基准
+    4.报告中必须包含同意卖出或者继续持有(持有到卖出时间预期和价格)以及止损策略（目标价格以及时间预期）
     5.以股票代码加股票中文名称加交易评估报告加日期作为标题
   agent: cfo
   output_file: output/{symbol}/{file_date}/cfo.md

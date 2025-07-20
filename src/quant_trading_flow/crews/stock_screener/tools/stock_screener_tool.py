@@ -2,12 +2,12 @@ import requests
 import pandas as pd
 import json
 import time
-import numpy as np
 from tqdm import tqdm
 from crewai.tools import tool
+from quant_trading_flow.tools.tool import read_csv_values
 
 
-@tool("获取股票代码清单")
+@tool("获取股票代码清单工具")
 def get_filtered_stocks():
     """
     获取股票代码清单
@@ -144,6 +144,11 @@ def get_filtered_stocks():
         # 添加日期列
         df["数据日期"] = pd.Timestamp.now().strftime("%Y-%m-%d")
 
+        csv_values = read_csv_values("trade.csv")
+        no_csv_values = read_csv_values("no_trade.csv")
+        has_csv_values = read_csv_values("has_trade.csv")
+        values = csv_values + no_csv_values + has_csv_values
+        df = df[~df["股票代码"].isin(values)]
         return ",".join(df["股票代码"])
 
     except requests.exceptions.RequestException as e:
@@ -155,21 +160,3 @@ def get_filtered_stocks():
     except Exception as e:
         print(f"发生未知错误: {e}")
         return pd.DataFrame()
-
-
-# if __name__ == "__main__":
-#     print("开始获取符合筛选条件的股票数据...")
-#     stock_df = get_filtered_stocks()
-
-#     if stock_df is not None and not stock_df.empty:
-#         # 显示前10条数据
-#         print("\n前10条筛选结果:")
-#         print(stock_df.head(10))
-
-#         # 保存到Excel
-#         excel_file = save_to_excel(stock_df)
-
-#         # 分析结果
-#         analyze_results(stock_df)
-#     else:
-#         print("未获取到符合条件的数据")

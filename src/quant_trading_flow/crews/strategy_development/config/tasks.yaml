@@ -1,9 +1,22 @@
+strategy_data_analysis_task:
+  description: >
+    "任务一：必须使用【获取交易数据报告工具】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告。"
+  expected_output: >
+    输出股票{symbol}交易数据报告
+  agent: strategy_development
+
+strategy_development_task:
+  description: >
+    "任务二：必须使用【读取本地数据文件进行策略处理与回测工具】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告。"
+  expected_output: >
+    输出股票{symbol}策略处理与回测报告
+  agent: strategy_development
+
 strategy_task:
   description: >
-    "执行股票{symbol}相关策略开发。"
-      "第一步：获取股票{symbol}交易数据，必须使用"读取本地文件获取交易数据报告"工具，参数为{symbol},{file_date}。"
-      "第二步：针对股票{symbol}执行策略开发与回测，必须使用"读取本地数据文件进行策略处理与回测"工具，参数为{symbol},{file_date}。"
-      "第三步：针对股票{symbol}进行策略质量评估，对照交易数据报告里面的策略开发与回测分析与诊断报告可行性建议，评估策略中使用的策略核心代码是否有问题。"
+    "任务三：针对股票{symbol}进行策略评估"
+      "1：根据股票{symbol}的交易数据报告，以及策略处理与回测报告，生成策略评估报告。"
+      "2：根据股票{symbol}策略评估报告，对照交易数据报告里面的策略开发与回测分析与诊断报告可行性建议，评估策略中使用的策略核心代码是否有问题。"
   expected_output: >
     "输出股票{symbol}相关策略的总结性报告（报告必须是中文）。"
       1.报告中必须包含当前时间{end_date}一周内，针对股票{symbol}执行的回测结果。

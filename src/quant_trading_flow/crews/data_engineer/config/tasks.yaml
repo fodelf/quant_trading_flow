@@ -1,12 +1,19 @@
+get_data_task:
+  description: >
+    "任务一：必须使用【获取相关股票交易数据工具】，参数为{symbol},{start_date},{end_date},{file_date}获取相关股票交易数据。"
+  expected_output: >
+    输出目标股票{symbol}交易数据
+  agent: data_engineer
+
 data_task:
   description: >
-    "分析股票{symbol}相关交易数据数据。"
-      "第一步：必须使用"获取相关股票交易数据"工具，参数为{symbol},{start_date},{end_date},{file_date}获取相关股票交易数据。"
-      "第二步：根据获取的数据进行数据质量评估，完整性分析，可靠性分析。"
-      "第三步：针对股票{symbol}最近5日成交数据分析，并验证每一列数据的合法性，以股票价格为例不能出现极高，极低。"
-      "第四步：针对股票{symbol}策略开发和回测分析的提出可行性建议。"
+    "任务二：根据任务一获取的股票{symbol}交易数据执行以下操作，生成交易数据报告。"
+      "1：数据质量评估，包含完整性分析，可靠性分析。"
+      "2：最近5日成交数据分析，并验证每一列数据的合法性，以股票价格为例不能出现极高，极低。"
+      "3：策略开发和回测分析，提出可行性建议。"
   expected_output: >
     输出目标股票{symbol}交易数据的总结性报告（报告必须是中文）
     1.以股票代码加股票中文名称加交易数据报告加日期作为标题
+    2.必须包含最近五日交易数据
   agent: data_engineer
   output_file: output/{symbol}/{file_date}/data_report.md
