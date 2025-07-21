@@ -21,32 +21,34 @@ def delete_csv_by_value(csv_path, Value):
 
 def read_csv_values(csv_path: str, column_name: str = "Value") -> List[str]:
     """
-    从CSV文件中读取指定列的值
+    从CSV文件中提取指定列数据并返回为列表
 
     参数:
-        csv_path: CSV文件路径
-        column_name: 要读取的列名 (默认为"Value")
+    csv_file (str): CSV文件路径
+    column_name (str): 要提取的列名
 
     返回:
-        去重后的值列表
+    list: 包含指定列数据的列表
     """
-    values = set()
-
-    if not os.path.exists(csv_path):
-        print(f"错误: 文件 '{csv_path}' 不存在")
-        return list(values)
+    column_data = []
 
     try:
         with open(csv_path, "r", encoding="utf-8") as file:
             reader = csv.DictReader(file)
+
+            # 检查列是否存在
+            if column_name not in reader.fieldnames:
+                available_cols = ", ".join(reader.fieldnames)
+                raise ValueError(f"列 '{column_name}' 不存在。可用列: {available_cols}")
+
+            # 提取数据
             for row in reader:
-                if column_name in row:
-                    value = row[column_name].strip()
-                    if value:  # 确保值不为空
-                        values.add(value)
-        return list(values)
+                column_data.append(row[column_name])
+
+        return column_data
+
     except Exception as e:
-        print(f"读取CSV时出错: {e}")
+        print(f"读取CSV文件出错: {str(e)}")
         return []
 
 
@@ -55,10 +57,10 @@ def create_object(num, current_price):
         "current_price": current_price,
         "has_flag": True,
         "trade_flag": False,
-        "symbol": num,
+        "symbol": str(num).zfill(6),
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
-        # "file_date": "20250713220455",
+        # "file_date": "20250720215308",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
     }
 
@@ -68,7 +70,7 @@ def create_object_default(num):
         "has_flag": False,
         "trade_flag": False,
         "current_price": 0,
-        "symbol": num,
+        "symbol": str(num).zfill(6),
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
         # "file_date": "20250713220455",

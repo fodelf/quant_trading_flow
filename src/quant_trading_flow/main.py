@@ -67,16 +67,13 @@ def getData(state):
 
 class TradingFlow(Flow[TradingState]):
 
+    # @start()
+    # def init_market_data1(self):
+    #     return getData(self.state)
+
     @start()
     def init_market_data(self):
         return getData(self.state)
-        # 获取目标市场数据
-        # return {
-        #     "symbol": self.state.symbol,
-        #     "start_date": self.state.start_date,
-        #     "end_date": self.state.end_date,
-        #     "file_date": self.state.file_date,
-        # }
 
     @listen(init_market_data)
     def handle_data(self, market_data):
@@ -126,7 +123,6 @@ class TradingFlow(Flow[TradingState]):
     @listen("risk_has_management_decision")
     def risk_has_management(self):
         result = RiskHasManagementCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.risk_approval_flag = "同意买入" in result.raw
         return result.raw
 
     @router(risk_management)
@@ -197,8 +193,6 @@ class TradingFlow(Flow[TradingState]):
     @listen("trade_sell")
     def sell_immediate(self):
         print("立即卖出")
-        # csv_file = "no_trade.csv"
-        # append_number_to_csv(csv_file, self.state.symbol)
         return "sell"
 
     @listen("trade_handel")
@@ -222,10 +216,17 @@ def runTask(list):
 
 def kickoff():
     # 已经持有
-    csv_values = read_csv_values("has.csv")
-    handle_values = read_csv_values("has.csv", "Handle")
+    # csv_values = read_csv_values("has_trade.csv", "Value")
+    # print(csv_values)
+    # handle_values = read_csv_values("has_trade.csv", "Handle")
+    # print(handle_values)
+    csv_values = ["600690"]
+    handle_values = ["24.85"]
     csv_values_symbols = list(map(create_object, csv_values, handle_values))
+    print(csv_values_symbols)
     runTask(csv_values_symbols)
+    # return
+    # return
     # 尚未投资
     csv_values = read_csv_values("trade.csv")
     csv_values_symbols = list(map(create_object_trade, csv_values))
