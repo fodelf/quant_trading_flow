@@ -9,3 +9,4 @@ stock_screener.md
 no_trade.csv
 storage/  
 has_trade.csv
+*.pkl

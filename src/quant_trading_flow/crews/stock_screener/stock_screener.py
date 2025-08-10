@@ -33,6 +33,17 @@ class StockScreenerCrew:
     # If you would lik to add tools to your crew, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
+    def stock_screen_searcher(self) -> Agent:
+        return Agent(
+            config=self.agents_config["stock_screen_searcher"],  # type: ignore[index]
+            verbose=True,
+            max_retry_limit=5,
+            max_execution_time=1800,
+            llm=deepseek_llm,
+            tools=[get_filtered_stocks],
+        )
+
+    @agent
     def stock_screener(self) -> Agent:
         return Agent(
             config=self.agents_config["stock_screener"],  # type: ignore[index]
@@ -40,11 +51,6 @@ class StockScreenerCrew:
             max_retry_limit=5,
             max_execution_time=1800,
             llm=deepseek_llm,
-            tools=[get_filtered_stocks],
-            # system_template="""你是 {role}。 {backstory}。
-            #   你的目标是: {goal}。
-            #   按照任务的顺序依次执行。
-            #   以自然和对话的方式回应。专注于提供有用、准确的信息。""",
         )
 
     # To learn more about structured task outputs,
@@ -75,8 +81,8 @@ class StockScreenerCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            planning=True,
-            planning_llm=deepseek_llm,
+            # planning=True,
+            # planning_llm=deepseek_llm,
             # memory=True,
             # long_term_memory=LongTermMemory(
             #     storage=LTMSQLiteStorage(db_path=f"{custom_storage_path}/memory.db")

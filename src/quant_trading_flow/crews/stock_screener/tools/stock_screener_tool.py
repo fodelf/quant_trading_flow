@@ -10,7 +10,7 @@ from quant_trading_flow.tools.tool import read_csv_values
 @tool("获取股票代码清单工具")
 def get_filtered_stocks():
     """
-    获取股票代码清单
+    获取股票代码清单即get_filtered_stocks
 
     Args:
 
@@ -46,7 +46,7 @@ def get_filtered_stocks():
         "ps": "50",  # 每页大小
         "p": "1",  # 页码（初始为1）
         "sty": "SECUCODE,SECURITY_CODE,SECURITY_NAME_ABBR,NEW_PRICE,CHANGE_RATE,VOLUME_RATIO,HIGH_PRICE,LOW_PRICE,PRE_CLOSE_PRICE,VOLUME,DEAL_AMOUNT,TURNOVERRATE,TOTAL_MARKET_CAP,NEW_PRICE,POPULARITY_RANK,DEBT_ASSET_RATIO,TOI_YOY_RATIO",  # 返回字段
-        "filter": "(TOTAL_MARKET_CAP>=5000000000)(NEW_PRICE<=30.00)(POPULARITY_RANK>0)(POPULARITY_RANK<=500)(CHANGE_RATE<=8)",
+        "filter": "(DEAL_AMOUNT>=50000000)(TOTAL_MARKET_CAP>=5000000000)(NEW_PRICE<=30.00)(POPULARITY_RANK>0)(POPULARITY_RANK<=500)(CHANGE_RATE<=8)",
         "source": "SELECT_SECURITIES",
         "client": "WEB",
     }
@@ -149,6 +149,11 @@ def get_filtered_stocks():
         has_csv_values = read_csv_values("has_trade.csv")
         values = csv_values + no_csv_values + has_csv_values
         df = df[~df["股票代码"].isin(values)]
+        df = df[~df["股票代码"].astype(str).str.startswith("300")]
+        df = df[~df["股票代码"].astype(str).str.startswith("688")]
+        df = df[~df["股票代码"].astype(str).str.startswith("43")]
+        df = df[~df["股票代码"].astype(str).str.startswith("83")]
+        df = df[~df["股票代码"].astype(str).str.startswith("87")]
         return ",".join(df["股票代码"])
 
     except requests.exceptions.RequestException as e:

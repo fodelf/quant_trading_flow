@@ -16,8 +16,8 @@ from quant_trading_flow.crews.strategy_development.tools import (
 
 
 @CrewBase
-class StrategyDevelopmentCrew:
-    """StrategyDevelopment Crew"""
+class StrategyDevelopmentHasCrew:
+    """StrategyDevelopmentHas Crew"""
 
     agents: List[BaseAgent]
     tasks: List[Task]
@@ -71,7 +71,7 @@ class StrategyDevelopmentCrew:
     @task
     def strategy_task(self) -> Task:
         return Task(
-            config=self.tasks_config["strategy_task"],  # type: ignore[index]
+            config=self.tasks_config["strategy_task_has"],  # type: ignore[index]
             context=[
                 self.strategy_development_task(),
             ],
@@ -79,7 +79,7 @@ class StrategyDevelopmentCrew:
 
     @crew
     def crew(self) -> Crew:
-        """Creates the StrategyDevelopment Crew"""
+        """Creates the StrategyDevelopmentHas Crew"""
         # To learn how to add knowledge sources to your crew, check out the documentation:
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
 

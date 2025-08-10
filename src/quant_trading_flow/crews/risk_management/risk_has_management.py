@@ -32,60 +32,53 @@ class RiskHasManagementCrew:
             llm=deepseek_llm,
             max_retry_limit=5,
             max_execution_time=1800,
-            tools=[
-                risk_management_tool.get_data_report,
-                risk_management_tool.get_data_analysis,
-                risk_management_tool.get_government_affairs,
-                risk_management_tool.get_public_sentiment,
-                risk_management_tool.get_strategy_report,
-            ],
+            # tools=[
+            #     risk_management_tool.get_data_report,
+            #     risk_management_tool.get_data_analysis,
+            #     risk_management_tool.get_government_affairs,
+            #     risk_management_tool.get_public_sentiment,
+            #     risk_management_tool.get_strategy_report,
+            # ],
         )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
 
-    @task
-    def risk_management_data_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["risk_management_data_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def risk_management_data_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["risk_management_data_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def risk_management_fundamental_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["risk_management_fundamental_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def risk_management_fundamental_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["risk_management_fundamental_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def risk_management_policy_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["risk_management_policy_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def risk_management_policy_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["risk_management_policy_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def risk_management_sentiment_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["risk_management_sentiment_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def risk_management_sentiment_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["risk_management_sentiment_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def risk_management_strategy_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["risk_management_strategy_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def risk_management_strategy_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["risk_management_strategy_analysis_task"],  # type: ignore[index]
+    #     )
 
     @task
     def risk_management_task(self) -> Task:
         return Task(
             config=self.tasks_config["risk_has_management_task"],  # type: ignore[index]
-            context=[
-                self.risk_management_data_analysis_task(),
-                self.risk_management_fundamental_analysis_task(),
-                self.risk_management_policy_analysis_task(),
-                self.risk_management_sentiment_analysis_task(),
-                self.risk_management_strategy_analysis_task(),
-            ],
         )
 
     @crew
@@ -99,6 +92,6 @@ class RiskHasManagementCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            planning=True,
-            planning_llm=deepseek_llm,
+            # planning=True,
+            # planning_llm=deepseek_llm,
         )

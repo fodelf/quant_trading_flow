@@ -28,6 +28,17 @@ class DataEngineerCrew:
     # If you would lik to add tools to your crew, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
+    def data_engineer_tool(self) -> Agent:
+        return Agent(
+            config=self.agents_config["data_engineer_tool"],  # type: ignore[index]
+            verbose=True,
+            llm=deepseek_llm,
+            max_retry_limit=5,
+            max_execution_time=1800,
+            # tools=[data_tool.get_china_stock_data],
+        )
+
+    @agent
     def data_engineer(self) -> Agent:
         return Agent(
             config=self.agents_config["data_engineer"],  # type: ignore[index]
@@ -35,7 +46,7 @@ class DataEngineerCrew:
             llm=deepseek_llm,
             max_retry_limit=5,
             max_execution_time=1800,
-            tools=[data_tool.get_china_stock_data],
+            # tools=[data_tool.get_china_stock_data],
         )
 
     # To learn more about structured task outputs,
@@ -44,6 +55,7 @@ class DataEngineerCrew:
     @task
     def get_data_task(self) -> Task:
         return Task(
+            tools=[data_tool.get_china_stock_data],
             config=self.tasks_config["get_data_task"],  # type: ignore[index]
         )
 
@@ -65,6 +77,6 @@ class DataEngineerCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            planning=True,
-            planning_llm=deepseek_llm,
+            # planning=True,
+            # planning_llm=deepseek_llm,
         )

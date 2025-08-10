@@ -7,7 +7,7 @@ def advanced_backtest(
     df,
     initial_capital=100000.0,
     position_ratio=0.8,
-    max_drawdown=0.10,
+    max_drawdown=0.50,
     max_position_ratio=0.95,
     min_position_ratio=0.3,
 ):
@@ -289,19 +289,25 @@ def advanced_backtest(
             final_value = initial_capital * (1 + total_return)
             annualized_return = enhanced_return
 
+    res_details = []
     # 添加交易汇总
-    trade_details.append("-" * 120)
-    trade_details.append(f"初始资金: ¥{initial_capital:,.2f}")
-    trade_details.append(f"最终资产: ¥{final_value:,.2f}")
-    trade_details.append(f"总收益率: {total_return*100:.2f}%")
-    trade_details.append(f"年化收益率: {annualized_return*100:.2f}%")
-    trade_details.append(f"最大回撤阈值: {max_drawdown*100}%")
-    trade_details.append(f"买入资金比例: {position_ratio*100}%")
-    trade_details.append(f"最大持仓比例: {max_position_ratio*100}%")
-    trade_details.append(f"最小持仓比例: {min_position_ratio*100}%")
-    trade_details.append("=" * 120)
+    res_details.append(f"初始资金: ¥{initial_capital:,.2f}")
+    res_details.append(f"最终资产: ¥{final_value:,.2f}")
+    res_details.append(f"总收益率: {total_return*100:.2f}%")
+    res_details.append(f"年化收益率: {annualized_return*100:.2f}%")
+    res_details.append(f"最大回撤阈值: {max_drawdown*100}%")
+    res_details.append(f"买入资金比例: {position_ratio*100}%")
+    res_details.append(f"最大持仓比例: {max_position_ratio*100}%")
+    res_details.append(f"最小持仓比例: {min_position_ratio*100}%")
 
-    return final_value, total_return, trade_log, portfolio_df, trade_details
+    return (
+        final_value,
+        total_return,
+        trade_log,
+        portfolio_df,
+        trade_details,
+        res_details,
+    )
 
 
 # 7. 高收益交易策略
@@ -342,7 +348,7 @@ def high_return_strategy(df):
 @tool("读取本地数据文件进行策略处理与回测工具")
 def optimize_for_high_return(symbol: str, file_date: str) -> str:
     """
-    读取本地数据文件进行策略处理与回测
+    读取本地数据文件进行策略处理与回测即optimize_for_high_return
 
     Args:
       symbol (str): 股票代码
@@ -353,7 +359,7 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
     """
     initial_capital = 100000.0
     position_ratio = 0.8
-    max_drawdown = 0.10
+    max_drawdown = 0.50
     max_position_ratio = 0.95
     min_position_ratio = 0.3
     print("开始高收益参数优化...")
@@ -365,7 +371,7 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
 
     # 默认使用我们的高收益策略
     strategy_df = high_return_strategy(df)
-    final_value, total_return, trade_log, portfolio_df, trade_details = (
+    final_value, total_return, trade_log, portfolio_df, trade_details, res_details = (
         advanced_backtest(
             strategy_df,
             initial_capital,
@@ -388,15 +394,20 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
 
             # 尝试调整策略参数
             strategy_df = adjust_strategy_parameters(df)
-            final_value, total_return, trade_log, portfolio_df, trade_details = (
-                advanced_backtest(
-                    strategy_df,
-                    initial_capital,
-                    position_ratio,
-                    max_drawdown,
-                    max_position_ratio,
-                    min_position_ratio,
-                )
+            (
+                final_value,
+                total_return,
+                trade_log,
+                portfolio_df,
+                trade_details,
+                res_details,
+            ) = advanced_backtest(
+                strategy_df,
+                initial_capital,
+                position_ratio,
+                max_drawdown,
+                max_position_ratio,
+                min_position_ratio,
             )
 
             # 重新计算年化
@@ -411,8 +422,8 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
                 final_value = initial_capital * (1 + total_return)
                 annualized_return = enhanced_return
     print("输出报告")
+    # 最终资产:{final_value}；总收益率:{total_return*100:.2f}%；年化收益率:{annualized_return*100:.2f}%；最大回撤阈值:{max_drawdown*100}%；买入资金比例:{position_ratio*100}%；最大持仓比例:{max_position_ratio*100}%；最小持仓比例:{min_position_ratio*100}%\n
     return f"""
-    最终资产:{final_value}；总收益率:{total_return*100:.2f}%；年化收益率:{annualized_return*100:.2f}%；最大回撤阈值:{max_drawdown*100}%；买入资金比例:{position_ratio*100}%；最大持仓比例:{max_position_ratio*100}%；最小持仓比例:{min_position_ratio*100}%\n
     策略核心代码：
       df["Trend_Signal"] = np.where(df["MA10"] > df["MA50"], 1, 0)
       df["Momentum_Signal"] = np.where((df["RSI"] > 50) & (df["Momentum"] > 0.02), 1, 0)
@@ -420,7 +431,7 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
       df["Signal"] = np.where((df["Trend_Signal"] == 1) & (df["Momentum_Signal"] == 1)& (df["MACD_Signal"] == 1),1,0,)
       df["Position"] = df["Signal"].diff()
       df["Stop_Loss"] = df["Close"] - 1.5 * df["ATR"]\n
-    交易明细： {','.join(trade_details)}
+    最近10次交易明细： {','.join(trade_details[-10:] if len(trade_details) >= 10 else trade_details[:])}
     """
 
 

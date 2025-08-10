@@ -52,7 +52,7 @@ def read_csv_values(csv_path: str, column_name: str = "Value") -> List[str]:
         return []
 
 
-def create_object(num, current_price):
+def create_object(num, current_price, time):
     return {
         "current_price": current_price,
         "has_flag": True,
@@ -62,6 +62,7 @@ def create_object(num, current_price):
         "end_date": datetime.now().strftime("%Y%m%d"),
         # "file_date": "20250720215308",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
+        "handel_time": time,
     }
 
 
@@ -75,6 +76,7 @@ def create_object_default(num):
         "end_date": datetime.now().strftime("%Y%m%d"),
         # "file_date": "20250713220455",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
+        "handel_time": "",
     }
 
 
@@ -87,6 +89,7 @@ def create_object_trade(num):
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
+        "handel_time": "",
     }
 
 

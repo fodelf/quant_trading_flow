@@ -9,6 +9,7 @@ import base64
 import platform
 from crewai.tools import BaseTool
 import os
+from quant_trading_flow.crews.data_engineer.tools.technical import extract_30_features
 
 
 def calculate_technical_indicators(
@@ -55,22 +56,30 @@ def calculate_technical_indicators(
     ranges = pd.concat([high_low, high_close, low_close], axis=1)
     true_range = np.max(ranges, axis=1)
     df["ATR"] = true_range.rolling(window=14).mean()
+
     # 重置索引（将索引变回普通列）
     df.reset_index(inplace=True)
     os.makedirs(f"output/{symbol}/{file_date}", exist_ok=True)
     df.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
+
     return f"""
     数据总记录数:{len(df)}\n
-    数据字段:{', '.join(df.columns)}\n
-    最近五日价格: 前5{df.tail(5).to_string()} \n
-    技术指标：\n
-      MA10指标: 前5{df.nlargest(5, 'MA10').to_string()}，后5数据{df.nsmallest(5, 'MA10').to_string()} \n
-      MA50指标: 前5{df.nlargest(5, 'MA50').to_string()}，后5数据{df.nsmallest(5, 'MA50').to_string()}\n
-      EMA12指标:前5{df.nlargest(5, 'EMA12').to_string()}，后5数据{df.nsmallest(5, 'EMA12').to_string()}\n
-      EMA26指标: 前5{df.nlargest(5, 'EMA26').to_string()}，后5数据{df.nsmallest(5, 'EMA26').to_string()}\n
-      RSI指标:前5{df.nlargest(5, 'RSI').to_string()}，后5数据{df.nsmallest(5, 'RSI').to_string()}\n
-      ATR指标:前5{df.nlargest(5, 'ATR').to_string()}，后5数据{df.nsmallest(5, 'ATR').to_string()}\n
+    最新10天交易数据: {df.tail(10).to_string()} \n
+    历史数据总结：{extract_30_features(df)} \n
     """
+
+    # return f"""
+    # 数据总记录数:{len(df)}\n
+    # 数据字段:{', '.join(df.columns)}\n
+    # 最新价格: {df.tail(1).to_string()} \n
+    # 技术指标：\n
+    #   MA10指标: 前5{df.nlargest(5, 'MA10').to_string()}，后5数据{df.nsmallest(5, 'MA10').to_string()} \n
+    #   MA50指标: 前5{df.nlargest(5, 'MA50').to_string()}，后5数据{df.nsmallest(5, 'MA50').to_string()}\n
+    #   EMA12指标:前5{df.nlargest(5, 'EMA12').to_string()}，后5数据{df.nsmallest(5, 'EMA12').to_string()}\n
+    #   EMA26指标: 前5{df.nlargest(5, 'EMA26').to_string()}，后5数据{df.nsmallest(5, 'EMA26').to_string()}\n
+    #   RSI指标:前5{df.nlargest(5, 'RSI').to_string()}，后5数据{df.nsmallest(5, 'RSI').to_string()}\n
+    #   ATR指标:前5{df.nlargest(5, 'ATR').to_string()}，后5数据{df.nsmallest(5, 'ATR').to_string()}\n
+    # """
 
 
 def generate_sample_data(symbol: str, file_date: str):
@@ -97,7 +106,7 @@ def get_china_stock_data(
     symbol: str, start_date: str, end_date: str, file_date: str
 ) -> str:
     """
-    获取相关股票交易数据
+    获取相关股票交易数据工具
 
     Args:
         symbol (str): 股票代码

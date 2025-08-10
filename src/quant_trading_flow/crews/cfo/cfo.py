@@ -35,60 +35,60 @@ class CfoCrew:
             llm=deepseek_llm,
             max_retry_limit=10,
             max_execution_time=1800,
-            tools=[
-                cfo_tool.get_data_report,
-                cfo_tool.get_data_analysis,
-                cfo_tool.get_government_affairs,
-                cfo_tool.get_public_sentiment,
-                cfo_tool.get_strategy_report,
-                cfo_tool.get_risk_report,
-            ],
+            # tools=[
+            #     cfo_tool.get_data_report,
+            #     cfo_tool.get_data_analysis,
+            #     cfo_tool.get_government_affairs,
+            #     cfo_tool.get_public_sentiment,
+            #     cfo_tool.get_strategy_report,
+            #     cfo_tool.get_risk_report,
+            # ],
         )
 
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def cfo_data_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["cfo_data_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def cfo_data_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["cfo_data_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def cfo_fundamental_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["cfo_fundamental_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def cfo_fundamental_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["cfo_fundamental_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def cfo_policy_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["cfo_policy_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def cfo_policy_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["cfo_policy_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def cfo_sentiment_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["cfo_sentiment_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def cfo_sentiment_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["cfo_sentiment_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def cfo_strategy_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["cfo_strategy_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def cfo_strategy_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["cfo_strategy_analysis_task"],  # type: ignore[index]
+    #     )
 
-    @task
-    def cfo_risk_analysis_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["cfo_risk_analysis_task"],  # type: ignore[index]
-        )
+    # @task
+    # def cfo_risk_analysis_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["cfo_risk_analysis_task"],  # type: ignore[index]
+    #     )
 
     @task
     def cfo_task(self) -> Task:
         return Task(
             config=self.tasks_config["cfo_task"],
-            context=[self.cfo_data_analysis_task(), self.cfo_fundamental_analysis_task(), self.cfo_policy_analysis_task(), self.cfo_sentiment_analysis_task(), self.cfo_strategy_analysis_task(), self.cfo_risk_analysis_task()],  # type: ignore[index]
+            # type: ignore[index]
         )
 
     @crew
@@ -103,9 +103,9 @@ class CfoCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            planning=True,
+            # planning=True,
             # memory=True,
-            planning_llm=deepseek_llm,
+            # planning_llm=deepseek_llm,
             # long_term_memory=LongTermMemory(
             #     storage=LTMSQLiteStorage(db_path=f"{custom_storage_path}/memory.db")
             # ),

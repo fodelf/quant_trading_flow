@@ -28,6 +28,17 @@ class FundamentalAnalysisCrew:
     # If you would lik to add tools to your crew, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
+    def data_analysis_tool(self) -> Agent:
+        return Agent(
+            config=self.agents_config["data_analysis_tool"],  # type: ignore[index]
+            verbose=True,
+            llm=deepseek_llm,
+            max_retry_limit=5,
+            max_execution_time=1800,
+            tools=[data_base.get_finance_data_str],
+        )
+
+    @agent
     def data_analysis(self) -> Agent:
         return Agent(
             config=self.agents_config["data_analysis"],  # type: ignore[index]
@@ -35,7 +46,6 @@ class FundamentalAnalysisCrew:
             llm=deepseek_llm,
             max_retry_limit=5,
             max_execution_time=1800,
-            tools=[data_base.get_finance_data_str],
         )
 
     # To learn more about structured task outputs,
@@ -66,6 +76,6 @@ class FundamentalAnalysisCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            planning=True,
-            planning_llm=deepseek_llm,
+            # planning=True,
+            # planning_llm=deepseek_llm,
         )
