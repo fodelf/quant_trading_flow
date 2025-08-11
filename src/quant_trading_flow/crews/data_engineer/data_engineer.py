@@ -35,7 +35,7 @@ class DataEngineerCrew:
             llm=deepseek_llm,
             max_retry_limit=5,
             max_execution_time=1800,
-            # tools=[data_tool.get_china_stock_data],
+            tools=[data_tool.get_china_stock_data],
         )
 
     @agent
@@ -55,7 +55,7 @@ class DataEngineerCrew:
     @task
     def get_data_task(self) -> Task:
         return Task(
-            tools=[data_tool.get_china_stock_data],
+            # tools=[data_tool.get_china_stock_data],
             config=self.tasks_config["get_data_task"],  # type: ignore[index]
         )
 

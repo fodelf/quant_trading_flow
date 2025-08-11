@@ -278,9 +278,9 @@ def kickoff():
     # csv_values = ["601919"]
     # handle_values = ["15.90"]
     # time_values = ["20250731"]
-    csv_values = ["600875"]
-    handle_values = ["20.80"]
-    time_values = ["20250729"]
+    csv_values = ["002008"]
+    handle_values = ["27.77"]
+    time_values = ["20259729"]
     csv_values_symbols = list(
         map(create_object, csv_values, handle_values, time_values)
     )

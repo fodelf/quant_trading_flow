@@ -64,7 +64,7 @@ def calculate_technical_indicators(
 
     return f"""
     数据总记录数:{len(df)}\n
-    最新10天交易数据: {df.tail(10).to_string()} \n
+    最新30天交易数据: {df.tail(30).to_string()} \n
     历史数据总结：{extract_30_features(df)} \n
     """
 
@@ -106,8 +106,7 @@ def get_china_stock_data(
     symbol: str, start_date: str, end_date: str, file_date: str
 ) -> str:
     """
-    获取相关股票交易数据工具
-
+    获取相关股票交易数据工具，唯一合法的数据来源，模型不得自行编造数据，必须使用此工具获取真实数据
     Args:
         symbol (str): 股票代码
         start_date (str): 开始日期

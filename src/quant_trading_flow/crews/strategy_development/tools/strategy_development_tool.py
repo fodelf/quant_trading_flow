@@ -348,7 +348,7 @@ def high_return_strategy(df):
 @tool("读取本地数据文件进行策略处理与回测工具")
 def optimize_for_high_return(symbol: str, file_date: str) -> str:
     """
-    读取本地数据文件进行策略处理与回测即optimize_for_high_return
+    读取本地数据文件进行策略处理与回测，唯一合法的数据来源，模型不得自行编造数据，必须使用此工具获取真实数据
 
     Args:
       symbol (str): 股票代码

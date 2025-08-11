@@ -1,6 +1,6 @@
 strategy_development_task:
   description: >
-    "必须使用【读取本地数据文件进行策略处理与回测即optimize_for_high_return】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告。"
+    "必须使用【读取本地数据文件进行策略处理与回测】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告。（禁止凭空生成数据）"
   expected_output: >
     输出股票{symbol}策略处理与回测报告
   agent: strategy_development_tool
@@ -9,7 +9,7 @@ strategy_task:
   description: >
     "针对股票{symbol}进行策略评估"
       "1.分析交易数据报告:{data_report}"
-      "2.分析【读取本地数据文件进行策略处理与回测即optimize_for_high_return】获取的策略处理与回测报告"
+      "2.分析【读取本地数据文件进行策略处理与回测】获取的策略处理与回测报告"
       "3.根据以上报告内容输出策略评估报告，给出交易建议"
   expected_output: >
     "输出股票{symbol}相关策略的总结性报告（报告必须是中文）。"
