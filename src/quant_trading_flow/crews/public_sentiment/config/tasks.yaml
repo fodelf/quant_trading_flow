@@ -1,9 +1,10 @@
 public_sentiment_task:
   description: >
     当前时间是{end_date}，分析股票{symbol}相关的舆情
-    1. 评估舆情对目标股票{symbol}的影响，判断有利还是有弊
+      1. 评估舆情对目标股票{symbol}的影响，判断有利还是有弊
   expected_output: >
     输出股票{symbol}舆情的总结性报告（报告必须是中文）
-    1.以股票代码加股票中文名称加舆情报告加{end_date}作为标题
+      1.以股票代码加股票中文名称加舆情报告加{end_date}作为标题
+      2.报告必须包含有利有弊的核心说明
   agent: public_sentiment
   output_file: output/{symbol}/{file_date}/public_sentiment.md

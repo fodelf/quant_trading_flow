@@ -1,0 +1,11 @@
+event_analysis_task:
+  description: >
+    当前时间是{end_date}，分析股票{symbol}事件因子:{stock_events_analysis}
+    1. 过滤出数据中时间跟{end_date}时间最接近的一天（前后都行）的所有事件,超过一天的消息不予采纳。
+    2. 分析股票{symbol}事件因子的影响。
+  expected_output: >
+    输出股票{symbol}事件因子的总结性报告（报告必须是中文）
+    1.以股票代码加股票中文名称加事件因子报告加{end_date}作为标题
+    2.报告必须包含事件因子的核心说明，包括最接近{end_date}时间的一天的所有事件（视具体情况而定，没有事件就是没有），事件时间，事件类型，事件影响范围（用表格形式展现）
+  agent: event_analysis
+  output_file: output/{symbol}/{file_date}/event_analysis.md

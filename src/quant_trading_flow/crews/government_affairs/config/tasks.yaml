@@ -1,9 +1,10 @@
 government_affairs_task:
   description: >
     当前时间是{end_date}，分析股票{symbol}相关宏观经济与产业政策
-    1. 评估对宏观经济与产业政策目标股票{symbol}的影响，判断有利还是有弊
+      1. 评估对宏观经济与产业政策目标股票{symbol}的影响，判断有利还是有弊
   expected_output: >
     输出股票{symbol}宏观经济与产业政策的总结性报告（报告必须是中文）
-    1.以股票代码加股票中文名称加宏观经济与产业政策报告加{end_date}作为标题
+      1.以股票代码加股票中文名称加宏观经济与产业政策报告加{end_date}作为标题
+      2.报告必须包含有利有弊的核心说明
   agent: government_affairs
   output_file: output/{symbol}/{file_date}/government_affairs.md

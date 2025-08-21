@@ -7,7 +7,6 @@ from crewai.tools import tool
 from quant_trading_flow.tools.tool import read_csv_values
 
 
-@tool("获取股票代码清单工具")
 def get_filtered_stocks():
     """
     获取股票代码清单即get_filtered_stocks

@@ -7,7 +7,8 @@ from typing import List
 # you can use the @before_kickoff and @after_kickoff decorators
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 
-from quant_trading_flow.modules.deepseek import deepseek_llm
+from quant_trading_flow.modules.deepseek import deepseek_llm, openai_llm
+from crewai_tools import WebsiteSearchTool
 
 
 @CrewBase
@@ -33,7 +34,8 @@ class PublicSentimentCrew:
             verbose=True,
             max_retry_limit=5,
             max_execution_time=1800,
-            llm=deepseek_llm,
+            llm=openai_llm,
+            # tools=[WebsiteSearchTool],
         )
 
     # To learn more about structured task outputs,
@@ -58,5 +60,5 @@ class PublicSentimentCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            llm=deepseek_llm,
+            # llm=deepseek_llm,
         )

@@ -2,7 +2,7 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
-from quant_trading_flow.modules.deepseek import deepseek_llm
+from quant_trading_flow.modules.deepseek import deepseek_llm, openai_llm
 from quant_trading_flow.crews.risk_management.tools import risk_management_tool
 
 # If you want to run a snippet of code before or after the crew starts,

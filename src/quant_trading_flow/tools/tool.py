@@ -58,8 +58,14 @@ def create_object(num, current_price, time):
         "has_flag": True,
         "trade_flag": False,
         "symbol": str(num).zfill(6),
+        "symbol_alice": (
+            str(num).zfill(6) + ".SH"
+            if str(num).zfill(6).startswith("6")
+            else str(num).zfill(6) + ".SZ"
+        ),
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
+        # "end_date": "20250814",
         # "file_date": "20250720215308",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
         "handel_time": time,
@@ -74,6 +80,13 @@ def create_object_default(num):
         "symbol": str(num).zfill(6),
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
+        # "end_date": "20250814",
+        # "end_date": "20250814",
+        "symbol_alice": (
+            str(num).zfill(6) + ".SH"
+            if str(num).zfill(6).startswith("6")
+            else str(num).zfill(6) + ".SZ"
+        ),
         # "file_date": "20250713220455",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
         "handel_time": "",
@@ -90,6 +103,11 @@ def create_object_trade(num):
         "end_date": datetime.now().strftime("%Y%m%d"),
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
         "handel_time": "",
+        "symbol_alice": (
+            str(num).zfill(6) + ".SH"
+            if str(num).zfill(6).startswith("6")
+            else str(num).zfill(6) + ".SZ"
+        ),
     }
 
 

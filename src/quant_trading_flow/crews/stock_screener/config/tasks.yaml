@@ -1,13 +1,6 @@
-stock_screener_pick_task:
-  description: >
-    使用【获取股票代码清单】获取股票清单。
-  expected_output: >
-    股票清单
-  agent: stock_screen_searcher
-
 stock_screener_task:
   description: >
-    基于【获取股票代码清单】获取的股票清单，以当前时间是{end_date}为基准进行专业筛选
+    基于股票清单{stock_list}，以当前时间是{end_date}为基准进行专业筛选
       1.根据以下指标筛选最有长期投资价值的20只股票依次排序
       2.满足财务稳健性指标（负债健康的，现金储备）
       3.满足盈利能力指标（净资产收益率，投入资本回报率）

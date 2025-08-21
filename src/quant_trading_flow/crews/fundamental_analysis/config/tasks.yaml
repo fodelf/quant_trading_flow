@@ -1,17 +1,13 @@
-get_data_task:
-  description: >
-    "必须使用【根据股票代码获取股票基本面信息】，参数将{symbol}转换000001.SZ这样的格式输入，获取相关股票基本面数据。（禁止凭空生成数据）"
-  expected_output: >
-    输出股票{symbol}基本面数据
-  agent: data_analysis_tool
-
 data_analysis_task:
   description: >
-    "根据【根据股票代码获取股票基本面信息】获取的股票{symbol}基本面数据，生成基本面数据报告。"
-      "1：根据获取的数据进行数据质量评估，可靠性分析。"
-      "2：评估股票{symbol}财报内容。（包含不限于盈利能力，增长质量，财务健康度，资本效率，财务异常等等）"
+    分析股票{symbol}基本面
+      1.分析基本面数据:{fundamental_analysis}
+      2.根据获取的数据进行数据质量评估，可靠性分析
+      3.评估股票{symbol}财报内容（包含不限于盈利能力，增长质量，财务健康度，资本效率，财务异常等等）
+      4.生成基本面数据报告
   expected_output: >
     输出股票{symbol}基本面的总结性报告（报告必须是中文）
-    1.以股票代码加股票中文名称加基本面数据报告加{end_date}作为标题
+      1.以股票代码加股票中文名称加基本面数据报告加{end_date}作为标题
+      2.报告必须包含基本面核心数据
   agent: data_analysis
   output_file: output/{symbol}/{file_date}/data_analysis.md

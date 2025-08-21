@@ -1,34 +1,27 @@
-strategy_development_task:
-  description: >
-    "必须使用【读取本地数据文件进行策略处理与回测】，参数为{symbol},{file_date}，获取股票{symbol}交易数据报告。（禁止凭空生成数据）"
-  expected_output: >
-    输出股票{symbol}策略处理与回测报告
-  agent: strategy_development_tool
-
 strategy_task:
   description: >
-    "针对股票{symbol}进行策略评估"
-      "1.分析交易数据报告:{data_report}"
-      "2.分析【读取本地数据文件进行策略处理与回测】获取的策略处理与回测报告"
-      "3.根据以上报告内容输出策略评估报告，给出交易建议"
+    针对股票{symbol}进行策略评估
+      1.分析交易数据报告:{data_report}
+      2.分析策略开发报告：{strategy}
+      3.根据以上报告内容输出策略评估报告
   expected_output: >
-    "输出股票{symbol}相关策略的总结性报告（报告必须是中文）。"
-      "1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题"
-      "2.交易建议必须包含同意买入或者拒绝买入"
+    输出股票{symbol}相关策略的总结性报告（报告必须是中文）。
+      1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题。
+      2.包含必须包含当前时间{end_date}下对于股票{symbol}交易策略，并详细说明。
 
   agent: strategy_development
   output_file: output/{symbol}/{file_date}/strategy_report.md
 
 strategy_task_has:
   description: >
-    "针对股票{symbol}进行策略评估"
-      "1.分析交易数据报告:{data_report}"
-      "2.分析【读取本地数据文件进行策略处理与回测即optimize_for_high_return】获取的策略处理与回测报告"
-      "3.根据以上报告内容输出策略评估报告，当前股票成本价是{current_price}，买入时间是{handel_time}，给出交易建议"
+    针对股票{symbol}进行策略评估
+      1.分析交易数据报告:{data_report}
+      2.分析策略开发报告:{strategy}
+      3.根据以上报告内容输出策略评估报告
   expected_output: >
-    "输出股票{symbol}相关策略的总结性报告（报告必须是中文）。"
-      "1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题"
-      "2.交易建议必须包含继续持有（持有时间和价格预期）或者立即卖出以及止损策略（目标价格以及时间预期）"
+    输出股票{symbol}相关策略的总结性报告（报告必须是中文）
+      1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题
+      2.包含必须包含当前时间{end_date}下，成本价是{current_price}，买入时间是{handel_time}，对于股票{symbol}交易策略，并详细说明
 
   agent: strategy_development
   output_file: output/{symbol}/{file_date}/strategy_report.md

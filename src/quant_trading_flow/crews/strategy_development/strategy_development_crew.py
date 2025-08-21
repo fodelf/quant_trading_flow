@@ -2,7 +2,7 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
-from quant_trading_flow.modules.deepseek import deepseek_llm
+from quant_trading_flow.modules.deepseek import deepseek_llm, openai_llm
 from quant_trading_flow.crews.strategy_development.tools import (
     strategy_development_tool,
 )
@@ -31,18 +31,18 @@ class StrategyDevelopmentCrew:
     # If you would lik to add tools to your crew, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
 
-    @agent
-    def strategy_development_tool(self) -> Agent:
-        return Agent(
-            config=self.agents_config["strategy_development_tool"],  # type: ignore[index]
-            verbose=True,
-            llm=deepseek_llm,
-            max_retry_limit=5,
-            max_execution_time=1800,
-            tools=[
-                strategy_development_tool.optimize_for_high_return,
-            ],
-        )
+    # @agent
+    # def strategy_development_tool(self) -> Agent:
+    #     return Agent(
+    #         config=self.agents_config["strategy_development_tool"],  # type: ignore[index]
+    #         verbose=True,
+    #         llm=deepseek_llm,
+    #         max_retry_limit=5,
+    #         max_execution_time=1800,
+    #         tools=[
+    #             strategy_development_tool.optimize_for_high_return,
+    #         ],
+    #     )
 
     @agent
     def strategy_development(self) -> Agent:
@@ -62,19 +62,19 @@ class StrategyDevelopmentCrew:
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def strategy_development_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["strategy_development_task"],  # type: ignore[index]
-        )
+    # @task
+    # def strategy_development_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["strategy_development_task"],  # type: ignore[index]
+    #     )
 
     @task
     def strategy_task(self) -> Task:
         return Task(
             config=self.tasks_config["strategy_task"],  # type: ignore[index]
-            context=[
-                self.strategy_development_task(),
-            ],
+            # context=[
+            #     self.strategy_development_task(),
+            # ],
         )
 
     @crew

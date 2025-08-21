@@ -65,7 +65,7 @@ def calculate_technical_indicators(
     return f"""
     数据总记录数:{len(df)}\n
     最新30天交易数据: {df.tail(30).to_string()} \n
-    历史数据总结：{extract_30_features(df)} \n
+    历史数据总结：{extract_30_features(df)}
     """
 
     # return f"""
@@ -101,7 +101,6 @@ def generate_sample_data(symbol: str, file_date: str):
     return df
 
 
-@tool("获取相关股票交易数据工具")
 def get_china_stock_data(
     symbol: str, start_date: str, end_date: str, file_date: str
 ) -> str:
@@ -116,6 +115,56 @@ def get_china_stock_data(
     Returns:
         str: 格式化后的技术指标字符串
     """
+    dfsh = ak.stock_zh_index_daily(symbol="sh000001")
+    dfsh["date"] = pd.to_datetime(dfsh["date"])
+    dfsh.set_index("date", inplace=True)
+    dfsh.sort_index(ascending=True, inplace=True)
+    mask = (dfsh.index >= pd.to_datetime(start_date)) & (
+        dfsh.index <= pd.to_datetime(end_date)
+    )
+    dfsh = dfsh.loc[mask]
+    dfsh = dfsh.rename(
+        columns={
+            "date": "日期",
+            "open": "开盘",
+            "high": "最高",
+            "low": "最低",
+            "close": "收盘",
+            "volume": "成交量",
+        }
+    )
+
+    # 添加技术指标
+    dfsh["5日均线"] = dfsh["收盘"].rolling(window=5).mean()
+    # dfsh["10日均线"] = dfsh["收盘"].rolling(window=10).mean()
+    dfsh["涨跌幅"] = dfsh["收盘"].pct_change() * 100
+    # dfsz = ak.fund_etf_hist_em(
+    #     symbol="sz399001", period="daily", start_date="20250701", end_date=end_date
+    # )
+    # dfsh["日期"] = pd.to_datetime(dfsh["日期"])
+    # dfsh.set_index("日期", inplace=True)
+    dfsz = ak.stock_zh_index_daily(symbol="sz399001")
+    dfsz["date"] = pd.to_datetime(dfsz["date"])
+    dfsz.set_index("date", inplace=True)
+    dfsz.sort_index(ascending=True, inplace=True)
+    mask = (dfsz.index >= pd.to_datetime(start_date)) & (
+        dfsz.index <= pd.to_datetime(end_date)
+    )
+    dfsz = dfsz.loc[mask]
+    dfsz = dfsz.rename(
+        columns={
+            "date": "日期",
+            "open": "开盘",
+            "high": "最高",
+            "low": "最低",
+            "close": "收盘",
+            "volume": "成交量",
+        }
+    )
+    # 添加技术指标
+    dfsz["5日均线"] = dfsz["收盘"].rolling(window=5).mean()
+    # dfsh["10日均线"] = dfsz["收盘"].rolling(window=10).mean()
+    dfsz["涨跌幅"] = dfsz["收盘"].pct_change() * 100
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -152,7 +201,11 @@ def get_china_stock_data(
             # df = calculate_technical_indicators(df)
 
             print(f"成功获取 {symbol} 数据: {len(df)} 个交易日")
-            return calculate_technical_indicators(df, symbol, file_date)
+            return f"""
+            上证最近交易数据：{dfsh.tail(30).to_string()} \n
+            深证最近交易数据：{dfsz.tail(30).to_string()} \n
+            {calculate_technical_indicators(df, symbol, file_date)}
+            """
 
         except Exception as e:
             print(f"获取数据出错: {str(e)}")

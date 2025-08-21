@@ -14,8 +14,8 @@ from quant_trading_flow.crews.cfo.tools import cfo_tool
 
 
 @CrewBase
-class CfoCrew:
-    """CFO Crew"""
+class CfoHasDownCrew:
+    """CfoHasDown Crew"""
 
     agents: List[BaseAgent]
     tasks: List[Task]
@@ -23,52 +23,30 @@ class CfoCrew:
     # Learn more about YAML configuration files here:
     # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
     # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
-    agents_config = "config/agents.yaml"
-    tasks_config = "config/tasks.yaml"
+    agents_config = "config/agents_down.yaml"
+    tasks_config = "config/tasks_has_down.yaml"
 
-    # If you would lik to add tools to your crew, you can learn more about it here:
-    # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
-    def cfo(self) -> Agent:
+    def cfo_down(self) -> Agent:
         return Agent(
-            config=self.agents_config["cfo"],  # type: ignore[index]
+            config=self.agents_config["cfo_down"],  # type: ignore[index]
             llm=deepseek_llm,
             max_retry_limit=10,
             max_execution_time=1800,
         )
 
-    # To learn more about structured task outputs,
-    # task dependencies, and task callbacks, check out the documentation:
-    # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    # @task
-    # def cfo_data_analysis_task(self) -> Task:
-    #     return Task(
-    #         config=self.tasks_config["cfo_data_analysis_task"],  # type: ignore[index]
-    #     )
-
     @task
-    def cfo_task(self) -> Task:
+    def cfo_task_has_down(self) -> Task:
         return Task(
-            config=self.tasks_config["cfo_task"],
-            # type: ignore[index]
+            config=self.tasks_config["cfo_task_has_down"],
         )
 
     @crew
     def crew(self) -> Crew:
-        """Cfo Crew"""
-        # To learn how to add knowledge sources to your crew, check out the documentation:
-        # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
-        custom_storage_path = "./storage"
-        os.makedirs(custom_storage_path, exist_ok=True)
+        """CfoHasDown Crew"""
         return Crew(
             agents=self.agents,  # Automatically created by the @agent decorator
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            # planning=True,
-            # memory=True,
-            # planning_llm=deepseek_llm,
-            # long_term_memory=LongTermMemory(
-            #     storage=LTMSQLiteStorage(db_path=f"{custom_storage_path}/memory.db")
-            # ),
         )

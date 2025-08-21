@@ -32,16 +32,16 @@ class StockScreenerCrew:
 
     # If you would lik to add tools to your crew, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
-    @agent
-    def stock_screen_searcher(self) -> Agent:
-        return Agent(
-            config=self.agents_config["stock_screen_searcher"],  # type: ignore[index]
-            verbose=True,
-            max_retry_limit=5,
-            max_execution_time=1800,
-            llm=deepseek_llm,
-            tools=[get_filtered_stocks],
-        )
+    # @agent
+    # def stock_screen_searcher(self) -> Agent:
+    #     return Agent(
+    #         config=self.agents_config["stock_screen_searcher"],  # type: ignore[index]
+    #         verbose=True,
+    #         max_retry_limit=5,
+    #         max_execution_time=1800,
+    #         llm=deepseek_llm,
+    #         tools=[get_filtered_stocks],
+    #     )
 
     @agent
     def stock_screener(self) -> Agent:
@@ -56,17 +56,17 @@ class StockScreenerCrew:
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def stock_screener_pick_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["stock_screener_pick_task"],  # type: ignore[index]
-        )
+    # @task
+    # def stock_screener_pick_task(self) -> Task:
+    #     return Task(
+    #         config=self.tasks_config["stock_screener_pick_task"],  # type: ignore[index]
+    #     )
 
     @task
     def stock_screener_task(self) -> Task:
         return Task(
             config=self.tasks_config["stock_screener_task"],  # type: ignore[index]
-            context=[self.stock_screener_pick_task()],
+            # context=[self.stock_screener_pick_task()],
         )
 
     @crew

@@ -1,0 +1,18 @@
+cfo_task_has_up:
+  description: >
+    分析股票{symbol}给出交易看涨报告
+      1.分析交易数据报告:{data_report}
+      2.分析基本面数据报告:{data_analysis}
+      3.分析政府政策与市场环境报告:{government_affairs}
+      4.分析市场舆情报报告:{public_sentiment}
+      5.分析策略数据报告:{strategy_report}
+      6.分析风险数据报告:{risk_management}
+      7.事件数据报告:{event_data}
+      8.当前已经持有股票成本价是{current_price}，买入时间是{handel_time}，以最新价格计算盈亏，根据以上所有报告，从看涨的角度提取关键信息。
+  expected_output: >
+    输出股票{symbol}交易评估报告，给出综合评分以及交易指令。（报告必须是中文）
+      1.必须从交易数据报告,基本面数据报告,政府政策与市场环境报告,市场舆情报报告,策略数据报告,风险数据报告中，从看涨的角度提取关键论点。
+      2.以股票代码加股票中文名称加交易看涨报告加{end_date}作为标题
+
+  agent: cfo_up
+  output_file: output/{symbol}/{file_date}/cfo_up.md

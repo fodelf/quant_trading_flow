@@ -13,7 +13,6 @@ import requests
 import json
 
 
-@tool("根据股票代码获取股票基本面信息工具")
 def get_finance_data_str(symbol: str):
     """
     根据股票代码获取股票基本面信息，唯一合法的数据来源，模型不得自行编造数据，必须使用此工具获取真实数据
@@ -111,8 +110,11 @@ def get_finance_data_str(symbol: str):
                 result_str += f"{ch_name}: {formatted_value}\n"
 
         # 添加股票信息
-        stock_info = f"股票代码: {symbol}\n股票名称: {finance_data.get('SECURITY_NAME_ABBR', '')}\n\n"
-        return stock_info + result_str
+        stock_info = f"股票代码: {symbol}\n股票名称: {finance_data.get('SECURITY_NAME_ABBR', '')}\n"
+        return f"""
+          {stock_info}
+          {result_str}
+        """
 
     except Exception as e:
         return f"获取数据失败: {str(e)}"

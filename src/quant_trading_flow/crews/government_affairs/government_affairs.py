@@ -2,12 +2,13 @@ from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
+from crewai_tools import WebsiteSearchTool
 
 # If you want to run a snippet of code before or after the crew starts,
 # you can use the @before_kickoff and @after_kickoff decorators
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 
-from quant_trading_flow.modules.deepseek import deepseek_llm
+from quant_trading_flow.modules.deepseek import deepseek_llm, openai_llm
 
 
 @CrewBase
@@ -33,7 +34,8 @@ class GovernmentAffairsCrew:
             verbose=True,
             max_retry_limit=5,
             max_execution_time=1800,
-            llm=deepseek_llm,
+            llm=openai_llm,
+            # tools=[WebsiteSearchTool],
         )
 
     # To learn more about structured task outputs,
@@ -47,7 +49,7 @@ class GovernmentAffairsCrew:
 
     @crew
     def crew(self) -> Crew:
-        """Creates the Data Engineer Crew"""
+        """获取宏观政策与市场环境----"""
         # To learn how to add knowledge sources to your crew, check out the documentation:
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
 
@@ -56,5 +58,4 @@ class GovernmentAffairsCrew:
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
             verbose=True,
-            llm=deepseek_llm,
         )
