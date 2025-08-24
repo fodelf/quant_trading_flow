@@ -202,8 +202,8 @@ def get_china_stock_data(
 
             print(f"成功获取 {symbol} 数据: {len(df)} 个交易日")
             return f"""
-            上证最近交易数据：{dfsh.tail(30).to_string()} \n
-            深证最近交易数据：{dfsz.tail(30).to_string()} \n
+            上证最近30天交易数据：{dfsh.tail(30).to_string()} \n
+            深证最近30天交易数据：{dfsz.tail(30).to_string()} \n
             {calculate_technical_indicators(df, symbol, file_date)}
             """
 

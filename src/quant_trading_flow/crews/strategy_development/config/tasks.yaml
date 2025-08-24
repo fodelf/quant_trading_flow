@@ -1,13 +1,12 @@
 strategy_task:
   description: >
     针对股票{symbol}进行策略评估
-      1.分析交易数据报告:{data_report}
-      2.分析策略开发报告：{strategy}
-      3.根据以上报告内容输出策略评估报告
+      1.分析交易数据:{strategy}
+      2.根据以上交易数据配合现在已知的A股最好策略模型，输出交易策略以及评估报告
   expected_output: >
     输出股票{symbol}相关策略的总结性报告（报告必须是中文）。
       1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题。
-      2.包含必须包含当前时间{end_date}下对于股票{symbol}交易策略，并详细说明。
+      2.分析所有交易数据配合现在已知的A股最好策略模型，输出交易策略，包含当前时间{end_date}下对于股票{symbol}交易策略建议以及详细说明。
 
   agent: strategy_development
   output_file: output/{symbol}/{file_date}/strategy_report.md
@@ -15,13 +14,12 @@ strategy_task:
 strategy_task_has:
   description: >
     针对股票{symbol}进行策略评估
-      1.分析交易数据报告:{data_report}
-      2.分析策略开发报告:{strategy}
-      3.根据以上报告内容输出策略评估报告
+      1.分析交易数据:{strategy}
+      2.分析所有交易数据配合现在已知的A股最好策略模型，输出交易策略以及评估报告
   expected_output: >
     输出股票{symbol}相关策略的总结性报告（报告必须是中文）
       1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题
-      2.包含必须包含当前时间{end_date}下，成本价是{current_price}，买入时间是{handel_time}，对于股票{symbol}交易策略，并详细说明
+      2.包含必须包含当前时间{end_date}下，成本价是{current_price}，买入时间是{handel_time}，对于股票{symbol}执行的交易策略，并详细说明
 
   agent: strategy_development
   output_file: output/{symbol}/{file_date}/strategy_report.md

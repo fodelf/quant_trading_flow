@@ -2,7 +2,8 @@ event_analysis_task:
   description: >
     当前时间是{end_date}，分析股票{symbol}事件因子:{stock_events_analysis}
     1. 过滤出数据中时间跟{end_date}时间最接近的一天（前后都行）的所有事件,超过一天的消息不予采纳。
-    2. 分析股票{symbol}事件因子的影响。
+    2. 不允许获取当前时间是{end_date}之后的交易结果数据作为事件判断因素。
+    3. 分析股票{symbol}事件因子的影响。
   expected_output: >
     输出股票{symbol}事件因子的总结性报告（报告必须是中文）
     1.以股票代码加股票中文名称加事件因子报告加{end_date}作为标题

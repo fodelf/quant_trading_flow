@@ -363,13 +363,15 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
     max_drawdown = 0.50
     max_position_ratio = 0.95
     min_position_ratio = 0.3
-    print("开始高收益参数优化...")
-    print(f"资金管理参数: 买入比例={position_ratio*100}%, 最大回撤={max_drawdown*100}%")
+    # print("开始高收益参数优化...")
+    # print(f"资金管理参数: 买入比例={position_ratio*100}%, 最大回撤={max_drawdown*100}%")
     df = pd.read_csv(f"output/{symbol}/{file_date}/data.csv")
     df["Date"] = pd.to_datetime(df["Date"])
     df.set_index("Date", inplace=True)
     df.sort_index(ascending=True, inplace=True)
-
+    return f"""
+    最新300天交易数据: {df.tail(300).to_string()}\n
+    """
     # 默认使用我们的高收益策略
     strategy_df = high_return_strategy(df)
     final_value, total_return, trade_log, portfolio_df, trade_details, res_details = (
