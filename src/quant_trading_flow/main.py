@@ -120,15 +120,23 @@ def getData(state):
 
 class TradingFlow(Flow[TradingState]):
 
-    # @start()
+    @start()
     # def init_market_data1(self):
+    #     market_data = getData(self.state)
+    #     stock_data = get_china_stock_data(
+    #         symbol=market_data["symbol"],
+    #         start_date=market_data["start_date"],
+    #         end_date=market_data["end_date"],
+    #         file_date=market_data["file_date"],
+    #     )
+    #     self.state.stock_data = stock_data
     #     return getData(self.state)
 
     @start()
     def init_market_data(self):
         return getData(self.state)
 
-    # @listen("init_market_data12")
+    # @listen("init_market_data")
     # def init_market_data(self):
     #     return getData(self.state)
 
@@ -224,15 +232,15 @@ class TradingFlow(Flow[TradingState]):
         else:
             return "risk_default_management_decision"
 
-    @listen("risk_default_management_decision")
+    @router("risk_default_management_decision")
     def risk_management(self):
         result = RiskManagementCrew().crew().kickoff(inputs=getData(self.state))
-        # self.state.risk_approval_flag = "同意买入" in result.raw
+        self.state.risk_approval_flag = "同意买入" in result.raw
         self.state.risk_management = result.raw
-        # if self.state.risk_approval_flag:
-        #     return "risk_approval_pass"
-        # else:
-        #     return "approval_reject"
+        if self.state.risk_approval_flag:
+            return "risk_approval_pass"
+        else:
+            return "approval_reject"
 
     @listen("risk_has_management_decision")
     def risk_has_management(self):
@@ -240,13 +248,13 @@ class TradingFlow(Flow[TradingState]):
         self.state.risk_management = result.raw
         return result.raw
 
-    @listen(risk_management)
+    @listen("risk_approval_pass")
     def trade_up_management(self):
         result = CfoUpCrew().crew().kickoff(inputs=getData(self.state))
         self.state.up_data = result.raw
         return result.raw
 
-    @listen(risk_management)
+    @listen("risk_approval_pass")
     def trade_down_management(self):
         result = CfoDownCrew().crew().kickoff(inputs=getData(self.state))
         self.state.down_data = result.raw
@@ -368,22 +376,27 @@ def kickoff():
     # )
     # extract_json = extract_json_from_text(result.raw)
     # stock_list = extract_json.get("stock_list", [])
-    stock_list = ["605183"]
+    stock_list = [
+        "603216",
+    ]
     symbols = list(map(create_object_default, stock_list))
     runTask(symbols)
     return
     # csv_values = read_csv_values("has_trade.csv", "Value")
     # handle_values = read_csv_values("has_trade.csv", "Handle")
     # time_values = read_csv_values("has_trade.csv", "Time")
-    csv_values = ["601727"]
-    handle_values = ["8.62"]
-    time_values = ["20250813"]
-    # csv_values = ["601288", "601727"]
-    # handle_values = ["6.97", "8.62"]
-    # time_values = ["20250819", "20250813"]
-    # csv_values = ["600406", "600875", "601919"]
-    # handle_values = ["22.5", "20.80", "15.90"]
-    # time_values = ["20250725", "20250729", "20250731"]
+    csv_values = ["601919"]
+    handle_values = ["15.90"]
+    time_values = ["20250731"]
+    # csv_values = ["600875"]
+    # handle_values = ["20.80"]
+    # time_values = ["20250729"]
+    # csv_values = ["600406"]
+    # handle_values = ["22.5"]
+    # time_values = ["20250725"]
+    # csv_values = ["600406", "601919"]
+    # handle_values = ["22.5", "15.90"]
+    # time_values = ["20250725", "20250731"]
     csv_values_symbols = list(
         map(create_object, csv_values, handle_values, time_values)
     )

@@ -370,7 +370,7 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
     df.set_index("Date", inplace=True)
     df.sort_index(ascending=True, inplace=True)
     return f"""
-    最新300天交易数据: {df.tail(300).to_string()}\n
+    最新1000天交易数据: {df.tail(1000).to_string()}
     """
     # 默认使用我们的高收益策略
     strategy_df = high_return_strategy(df)

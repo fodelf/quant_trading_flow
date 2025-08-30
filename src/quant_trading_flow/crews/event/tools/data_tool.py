@@ -26,7 +26,7 @@ def get_stock_events_analysis(stock_code, target_date_str):
                         "searchScope": "default",
                         "sort": "default",
                         "pageIndex": 1,
-                        "pageSize": 20,  # 增加页面大小以获取更多结果
+                        "pageSize": 10,  # 增加页面大小以获取更多结果
                         "preTag": "<em>",
                         "postTag": "</em>",
                     }
