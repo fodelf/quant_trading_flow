@@ -30,6 +30,11 @@ from quant_trading_flow.crews.strategy_development.strategy_development_has_crew
 from quant_trading_flow.crews.strategy_development.tools.strategy_development_tool import (
     optimize_for_high_return,
 )
+
+from quant_trading_flow.crews.strategy_development.tools.strategy_development import (
+    run_strategy_development,
+)
+
 from quant_trading_flow.crews.risk_management.risk_management import RiskManagementCrew
 from quant_trading_flow.crews.risk_management.risk_has_management import (
     RiskHasManagementCrew,
@@ -121,24 +126,24 @@ def getData(state):
 class TradingFlow(Flow[TradingState]):
 
     @start()
-    # def init_market_data1(self):
-    #     market_data = getData(self.state)
-    #     stock_data = get_china_stock_data(
-    #         symbol=market_data["symbol"],
-    #         start_date=market_data["start_date"],
-    #         end_date=market_data["end_date"],
-    #         file_date=market_data["file_date"],
-    #     )
-    #     self.state.stock_data = stock_data
-    #     return getData(self.state)
-
-    @start()
-    def init_market_data(self):
+    def init_market_data1(self):
+        market_data = getData(self.state)
+        stock_data = get_china_stock_data(
+            symbol=market_data["symbol"],
+            start_date=market_data["start_date"],
+            end_date=market_data["end_date"],
+            file_date=market_data["file_date"],
+        )
+        self.state.stock_data = stock_data
         return getData(self.state)
 
-    # @listen("init_market_data")
+    # @start()
     # def init_market_data(self):
     #     return getData(self.state)
+
+    @listen("init_market_data")
+    def init_market_data(self):
+        return getData(self.state)
 
     @listen(init_market_data)
     def handle_data(self, market_data):
@@ -191,7 +196,8 @@ class TradingFlow(Flow[TradingState]):
         else:
             return "strategy_default_decision"
 
-    @listen("strategy_default_decision")
+    # @listen("strategy_default_decision")
+    @listen(init_market_data1)
     def strategy_development(self):
         market_data = getData(self.state)
         self.state.strategy = optimize_for_high_return(
@@ -376,11 +382,12 @@ def kickoff():
     # )
     # extract_json = extract_json_from_text(result.raw)
     # stock_list = extract_json.get("stock_list", [])
-    stock_list = [
-        "603216",
-    ]
-    symbols = list(map(create_object_default, stock_list))
-    runTask(symbols)
+    # stock_list = [
+    #     "603316",
+    # ]
+    # symbols = list(map(create_object_default, stock_list))
+    # runTask(symbols)
+    print(run_strategy_development("603316", "data.csv", ["20250829"]))
     return
     # csv_values = read_csv_values("has_trade.csv", "Value")
     # handle_values = read_csv_values("has_trade.csv", "Handle")
