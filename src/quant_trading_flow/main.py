@@ -92,6 +92,7 @@ class TradingState(BaseModel):
     down_data: str = ""
     event_data: str = ""
     stock_events_analysis: str = ""
+    prediction: str = ""
 
 
 def getData(state):
@@ -120,30 +121,31 @@ def getData(state):
         "down_data": state.down_data,
         "event_data": state.event_data,
         "stock_events_analysis": state.stock_events_analysis,
+        "prediction": state.prediction,
     }
 
 
 class TradingFlow(Flow[TradingState]):
 
-    @start()
-    def init_market_data1(self):
-        market_data = getData(self.state)
-        stock_data = get_china_stock_data(
-            symbol=market_data["symbol"],
-            start_date=market_data["start_date"],
-            end_date=market_data["end_date"],
-            file_date=market_data["file_date"],
-        )
-        self.state.stock_data = stock_data
-        return getData(self.state)
-
     # @start()
-    # def init_market_data(self):
+    # def init_market_data1(self):
+    #     market_data = getData(self.state)
+    #     stock_data = get_china_stock_data(
+    #         symbol=market_data["symbol"],
+    #         start_date=market_data["start_date"],
+    #         end_date=market_data["end_date"],
+    #         file_date=market_data["file_date"],
+    #     )
+    #     self.state.stock_data = stock_data
     #     return getData(self.state)
 
-    @listen("init_market_data")
+    @start()
     def init_market_data(self):
         return getData(self.state)
+
+    # @listen("init_market_data")
+    # def init_market_data(self):
+    #     return getData(self.state)
 
     @listen(init_market_data)
     def handle_data(self, market_data):
@@ -196,11 +198,14 @@ class TradingFlow(Flow[TradingState]):
         else:
             return "strategy_default_decision"
 
-    # @listen("strategy_default_decision")
-    @listen(init_market_data1)
+    @listen("strategy_default_decision")
     def strategy_development(self):
         market_data = getData(self.state)
         self.state.strategy = optimize_for_high_return(
+            symbol=market_data["symbol"],
+            file_date=market_data["file_date"],
+        )
+        self.state.prediction = run_strategy_development(
             symbol=market_data["symbol"],
             file_date=market_data["file_date"],
         )
@@ -238,15 +243,15 @@ class TradingFlow(Flow[TradingState]):
         else:
             return "risk_default_management_decision"
 
-    @router("risk_default_management_decision")
+    @listen("risk_default_management_decision")
     def risk_management(self):
         result = RiskManagementCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.risk_approval_flag = "同意买入" in result.raw
+        # self.state.risk_approval_flag = "同意买入" in result.raw
         self.state.risk_management = result.raw
-        if self.state.risk_approval_flag:
-            return "risk_approval_pass"
-        else:
-            return "approval_reject"
+        # if self.state.risk_approval_flag:
+        #     return "risk_approval_pass"
+        # else:
+        #     return "approval_reject"
 
     @listen("risk_has_management_decision")
     def risk_has_management(self):
@@ -254,13 +259,13 @@ class TradingFlow(Flow[TradingState]):
         self.state.risk_management = result.raw
         return result.raw
 
-    @listen("risk_approval_pass")
+    @listen(risk_management)
     def trade_up_management(self):
         result = CfoUpCrew().crew().kickoff(inputs=getData(self.state))
         self.state.up_data = result.raw
         return result.raw
 
-    @listen("risk_approval_pass")
+    @listen(risk_management)
     def trade_down_management(self):
         result = CfoDownCrew().crew().kickoff(inputs=getData(self.state))
         self.state.down_data = result.raw
@@ -382,12 +387,11 @@ def kickoff():
     # )
     # extract_json = extract_json_from_text(result.raw)
     # stock_list = extract_json.get("stock_list", [])
-    # stock_list = [
-    #     "603316",
-    # ]
-    # symbols = list(map(create_object_default, stock_list))
-    # runTask(symbols)
-    print(run_strategy_development("603316", "data.csv", ["20250829"]))
+    # print(run_strategy_development("600207", "20250909234221"))
+    # return
+    stock_list = ["688006"]
+    symbols = list(map(create_object_default, stock_list))
+    runTask(symbols)
     return
     # csv_values = read_csv_values("has_trade.csv", "Value")
     # handle_values = read_csv_values("has_trade.csv", "Handle")

@@ -30,7 +30,7 @@ class CfoDownCrew:
     def cfo_down(self) -> Agent:
         return Agent(
             config=self.agents_config["cfo_down"],  # type: ignore[index]
-            llm=deepseek_llm,
+            llm=openai_llm,
             max_retry_limit=10,
             max_execution_time=1800,
         )

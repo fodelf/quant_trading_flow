@@ -65,9 +65,8 @@ def calculate_technical_indicators(
     return f"""
     数据总记录数:{len(df)}\n
     最新30天交易数据: {df.tail(30).to_string()} \n
-    历史数据总结：{extract_30_features(df)}
     """
-
+    #  历史数据总结：{extract_30_features(df)}
     # return f"""
     # 数据总记录数:{len(df)}\n
     # 数据字段:{', '.join(df.columns)}\n

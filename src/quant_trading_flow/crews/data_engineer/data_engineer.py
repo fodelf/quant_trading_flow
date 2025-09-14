@@ -44,7 +44,7 @@ class DataEngineerCrew:
         return Agent(
             config=self.agents_config["data_engineer"],  # type: ignore[index]
             verbose=True,
-            llm=deepseek_llm,
+            llm=openai_llm,
             max_retry_limit=5,
             max_execution_time=1800,
             # tools=[data_tool.get_china_stock_data],

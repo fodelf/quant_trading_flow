@@ -29,7 +29,7 @@ class RiskManagementCrew:
     def risk_management(self) -> Agent:
         return Agent(
             config=self.agents_config["risk_management"],  # type: ignore[index]
-            llm=deepseek_llm,
+            llm=openai_llm,
             max_retry_limit=5,
             max_execution_time=1800,
             # tools=[

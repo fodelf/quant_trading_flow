@@ -12,7 +12,19 @@ deepseek_llm = LLM(
 )
 
 openai_llm = LLM(
-    model="openrouter/openai/gpt-5-mini",
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPEN_ROUTER_API_KEY"),
+    model="deepseek/deepseek-chat",
+    api_key=os.environ["OPENAI_API_KEY"],
+    base_url="https://api.deepseek.com",
 )
+
+# openai_llm = LLM(
+#     model="openrouter/openai/gpt-5-mini",
+#     base_url="https://openrouter.ai/api/v1",
+#     api_key=os.getenv("OPEN_ROUTER_API_KEY"),
+# )
+
+# openai_llm = OpenAI(
+#     model="qwen3-max-preview",
+#     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+#     api_key=os.getenv("QIANWEN_API_KEY"),
+# )

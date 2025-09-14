@@ -53,19 +53,22 @@ def read_csv_values(csv_path: str, column_name: str = "Value") -> List[str]:
 
 
 def create_object(num, current_price, time):
+    symbol_alice = ""
+    if str(num).zfill(6).startswith("6"):
+        symbol_alice = str(num).zfill(6) + ".SH"
+    elif str(num).zfill(6).startswith("3"):
+        symbol_alice = str(num).zfill(6) + ".SHE"
+    else:
+        symbol_alice = str(num).zfill(6) + ".SZ"
     return {
         "current_price": current_price,
         "has_flag": True,
         "trade_flag": False,
         "symbol": str(num).zfill(6),
-        "symbol_alice": (
-            str(num).zfill(6) + ".SH"
-            if str(num).zfill(6).startswith("6")
-            else str(num).zfill(6) + ".SZ"
-        ),
+        "symbol_alice": symbol_alice,
         "start_date": "20180101",
-        # "end_date": datetime.now().strftime("%Y%m%d"),
-        "end_date": "20250827",
+        "end_date": datetime.now().strftime("%Y%m%d"),
+        # "end_date": "20250827",
         # "file_date": "20250720215308",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
         "handel_time": time,
@@ -79,8 +82,8 @@ def create_object_default(num):
         "current_price": 0,
         "symbol": str(num).zfill(6),
         "start_date": "20180101",
-        # "end_date": datetime.now().strftime("%Y%m%d"),
-        "end_date": "20250828",
+        "end_date": datetime.now().strftime("%Y%m%d"),
+        # "end_date": "20250911",
         # "end_date": "20250814",
         "symbol_alice": (
             str(num).zfill(6) + ".SH"

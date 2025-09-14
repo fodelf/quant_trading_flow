@@ -10,9 +10,6 @@ from sklearn.metrics import (
     recall_score,
     r2_score,
 )
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import TimeSeriesSplit
-import optuna
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import matplotlib.pyplot as plt
@@ -22,97 +19,6 @@ import matplotlib.font_manager as fm
 from datetime import datetime
 
 warnings.filterwarnings("ignore")
-
-
-def objective(trial, X_scaled, y_train_high, df, org_df):
-    """Optuna目标函数，用于优化LightGBM参数"""
-    # 参数建议范围
-    params = {
-        "boosting_type": trial.suggest_categorical("boosting_type", ["gbdt", "dart"]),
-        "num_leaves": trial.suggest_int("num_leaves", 20, 100),
-        "max_depth": trial.suggest_int("max_depth", 3, 10),
-        "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
-        "n_estimators": trial.suggest_int("n_estimators", 100, 2000),
-        "min_child_samples": trial.suggest_int("min_child_samples", 10, 100),
-        "subsample": trial.suggest_float("subsample", 0.7, 1.0),
-        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.7, 1.0),
-        "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 0.5),
-        "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 0.5),
-        "random_state": 42,
-        "verbose": -1,
-        "objective": "regression",
-        "metric": "rmse",
-    }
-    # 创建模型
-    model = lgb.LGBMRegressor(**params)
-
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X,
-    #     y,
-    #     test_size=0.15,  # 15%作为测试集
-    #     random_state=42,  # 随机种子，确保结果可重现
-    # )
-
-    # 3. 训练模型
-    model = lgb.LGBMRegressor(**params)
-    scaler = StandardScaler()
-    model.fit(X_scaled, y_train_high)
-    end_index = len(df)
-    start_index = end_index - 10
-    feature_columns = [
-        "Open",
-        "Close",
-        "High",
-        "Low",
-        "Volume",
-        "Amount",
-        "Amplitude",
-        "Change",
-        "ChangeAmount",
-        "TurnoverRate",
-        "MA5",
-        "MA10",
-        "MA20",
-        "Close_LAG_1",
-        "Close_LAG_5",
-        "Close_LAG_30",
-        "Volume_LAG_1",
-        "Volume_LAG_5",
-        "Volume_LAG_30",
-        "High_LAG_1",
-        "High_LAG_5",
-        "High_LAG_30",
-        "HighMean",
-        "HighStd",
-        "HighMax",
-        "RSI",
-        "Returns",
-        "Volatility",
-        "DayOfWeek",
-        "Month",
-        "Quarter",
-        "EMA12",
-        "EMA26",
-        "MACD",
-        "ATR",
-    ]
-    all_high_preds = []
-    all_high_true = []
-    scores = []
-    for i in range(start_index, end_index):
-        test_data = df.iloc[i : i + 1]
-        X_test = test_data[feature_columns]
-        X_test_scaled = scaler.transform(X_test)
-        pred_high = model.predict(X_test_scaled)[0]
-        true_high = org_df.iloc[i + 1]["High"]
-        all_high_preds.append(pred_high)
-        all_high_true.append(true_high)
-    # 预测并计算RMSE
-    rmse = np.sqrt(mean_squared_error(all_high_true, all_high_preds))
-    scores.append(rmse)
-
-    # 返回平均RMSE
-    return np.mean(scores)
 
 
 def setup_chinese_font():
@@ -280,20 +186,17 @@ class StockPredictor:
         # 定义目标变量 - 当天数据
         df_processed["target_high"] = df_processed["High"].shift(-1)
         df_processed["target_low"] = df_processed["Low"].shift(-1)
-        df_processed["target_close"] = df_processed["Close"].shift(-1)
-        df_processed["target_change"] = df_processed["Change"].shift(-1)
-        df_processed["target_open"] = df_processed["Open"].shift(-1)
+        # df_processed["target_close"] = df_processed["Close"]
+        # df_processed["target_change"] = df_processed["Change"]
+
         # # 分类目标: 当天是否上涨 (1: 上涨, 0: 下跌)
-        df_processed["target_direction"] = (
-            df_processed["Close"].shift(-1) > df_processed["Open"].shift(-1)
-        ).astype(int)
+        # df_processed["target_direction"] = (
+        #     df_processed["Close"] > df_processed["Open"]
+        # ).astype(int)
 
         # 删除包含NaN的行
         df_processed = df_processed.dropna()
-        # latest_data = df_processed.iloc[-1:]
-        # # print(latest_data)
-        # # new_df = df.iloc[:-1]
-        # predictor.df = df_processed
+
         # 保存特征列名 (排除目标列和日期列)
         # self.feature_columns = [
         #     col
@@ -325,17 +228,15 @@ class StockPredictor:
             "MA10",
             "MA20",
             "Close_LAG_1",
+            "Close_LAG_2",
+            "Close_LAG_3",
             "Close_LAG_5",
-            "Close_LAG_30",
+            "Close_LAG_10",
             "Volume_LAG_1",
+            "Volume_LAG_2",
+            "Volume_LAG_3",
             "Volume_LAG_5",
-            "Volume_LAG_30",
-            "High_LAG_1",
-            "High_LAG_5",
-            "High_LAG_30",
-            "HighMean",
-            "HighStd",
-            "HighMax",
+            "Volume_LAG_10",
             "RSI",
             "Returns",
             "Volatility",
@@ -376,191 +277,15 @@ class StockPredictor:
 
         return train_data, valid_data, test_data
 
-    def objective_change(self, trial, X_scaled, y_train_high, df, org_df, test_size):
-        """Optuna目标函数，用于优化LightGBM参数"""
-        # 参数建议范围
-        params = {
-            "boosting_type": trial.suggest_categorical(
-                "boosting_type", ["gbdt", "dart"]
-            ),
-            "num_leaves": trial.suggest_int("num_leaves", 20, 100),
-            "max_depth": trial.suggest_int("max_depth", 3, 10),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
-            "n_estimators": trial.suggest_int("n_estimators", 100, 2000),
-            "min_child_samples": trial.suggest_int("min_child_samples", 10, 100),
-            "subsample": trial.suggest_float("subsample", 0.7, 1.0),
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.7, 1.0),
-            "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 0.5),
-            "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 0.5),
-            "random_state": 42,
-            "verbose": -1,
-            "objective": "regression",
-            "metric": "rmse",
-        }
-        # 创建模型
-        model = lgb.LGBMRegressor(**params)
-        # 3. 训练模型
-        model.fit(X_scaled, y_train_high)
-        end_index = len(df)
-        start_index = end_index - test_size
-        all_high_preds = []
-        all_high_true = []
-        scores = []
-        for i in range(start_index, end_index):
-            test_data = org_df.iloc[i : i + 1]
-            X_test = test_data[self.feature_columns]
-            X_test_scaled = self.scaler.transform(X_test)
-            pred_high = model.predict(X_test_scaled)[0]
-            true_high = org_df.iloc[i + 1]["Change"]
-            all_high_preds.append(pred_high)
-            all_high_true.append(true_high)
-        # 预测并计算RMSE
-        rmse = np.sqrt(mean_squared_error(all_high_true, all_high_preds))
-        scores.append(rmse)
-
-        # 返回平均RMSE
-        return np.mean(scores)
-
-    def objective(self, trial, X_scaled, y_train_high, df, org_df, test_size):
-        """Optuna目标函数，用于优化LightGBM参数"""
-        # 参数建议范围
-        params = {
-            "boosting_type": trial.suggest_categorical(
-                "boosting_type", ["gbdt", "dart"]
-            ),
-            "num_leaves": trial.suggest_int("num_leaves", 20, 100),
-            "max_depth": trial.suggest_int("max_depth", 3, 10),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
-            "n_estimators": trial.suggest_int("n_estimators", 100, 2000),
-            "min_child_samples": trial.suggest_int("min_child_samples", 10, 100),
-            "subsample": trial.suggest_float("subsample", 0.7, 1.0),
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.7, 1.0),
-            "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 0.5),
-            "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 0.5),
-            "random_state": 42,
-            "verbose": -1,
-            "objective": "regression",
-            "metric": "rmse",
-        }
-        # 创建模型
-        model = lgb.LGBMRegressor(**params)
-        # 3. 训练模型
-        model.fit(X_scaled, y_train_high)
-        end_index = len(df)
-        start_index = end_index - test_size
-        all_high_preds = []
-        all_high_true = []
-        scores = []
-        for i in range(start_index, end_index):
-            test_data = org_df.iloc[i : i + 1]
-            X_test = test_data[self.feature_columns]
-            X_test_scaled = self.scaler.transform(X_test)
-            pred_high = model.predict(X_test_scaled)[0]
-            true_high = org_df.iloc[i + 1]["High"]
-            all_high_preds.append(pred_high)
-            all_high_true.append(true_high)
-        # 预测并计算RMSE
-        rmse = np.sqrt(mean_squared_error(all_high_true, all_high_preds))
-        scores.append(rmse)
-
-        # 返回平均RMSE
-        return np.mean(scores)
-
-    def objective_direction(self, trial, X_scaled, y_train_high, df, org_df, test_size):
-        """Optuna目标函数，用于优化LightGBM参数"""
-        # 参数建议范围
-        params = {
-            "boosting_type": trial.suggest_categorical(
-                "boosting_type", ["gbdt", "dart"]
-            ),
-            "num_leaves": trial.suggest_int("num_leaves", 20, 100),
-            "max_depth": trial.suggest_int("max_depth", 3, 10),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
-            "n_estimators": trial.suggest_int("n_estimators", 100, 2000),
-            "min_child_samples": trial.suggest_int("min_child_samples", 10, 100),
-            "subsample": trial.suggest_float("subsample", 0.7, 1.0),
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.7, 1.0),
-            "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 0.5),
-            "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 0.5),
-            "random_state": 42,
-            "verbose": -1,
-            "objective": "binary",
-            "metric": ["auc", "binary_logloss"],
-        }
-        # 创建模型
-        model = lgb.LGBMRegressor(**params)
-        # 3. 训练模型
-        model.fit(X_scaled, y_train_high)
-        end_index = len(df)
-        start_index = end_index - test_size
-        all_high_preds = []
-        all_high_true = []
-        scores = []
-        for i in range(start_index, end_index):
-            test_data = org_df.iloc[i : i + 1]
-            X_test = test_data[self.feature_columns]
-            X_test_scaled = self.scaler.transform(X_test)
-            pred_high = model.predict(X_test_scaled)[0]
-            true_high = (
-                org_df.iloc[i + 1]["Close"] > org_df.iloc[i + 1]["Open"]
-            ).astype(int)
-            all_high_preds.append(pred_high)
-            all_high_true.append(true_high)
-        # 预测并计算RMSE
-        # rmse = np.sqrt(accuracy_score(all_high_true, all_high_preds))
-        # scores.append(accuracy_score(all_high_true, all_high_preds))
-
-        # 返回平均RMSE
-        return np.mean(
-            (np.sign(all_high_preds) == np.sign(all_high_true)).astype(float)
-        )
-
-    # 定义目标函数
-    # 3. 定义Optuna目标函数
     def walk_forward_backtest(self, df):
         """
         执行滚动窗口回测，使用70%训练集，15%验证集，15%测试集
         """
         # 划分数据
         train_data, valid_data, test_data = self.split_data(df)
-        train_valid_data = pd.concat([train_data, valid_data])
-        org_df = self.df
-        y_train_high = train_valid_data["target_high"]
-        y_train_low = train_valid_data["target_low"]
-        y_train_close = train_valid_data["target_close"]
-        y_train_change = train_valid_data["target_change"]
-        y_train_direction = train_valid_data["target_direction"]
-        X_train = train_valid_data[self.feature_columns]
-        X_scaled = self.scaler.fit_transform(X_train)
-        # 创建Optuna研究并优化
-        study = optuna.create_study(direction="minimize")  # 最小化RMSE
-        study.optimize(
-            lambda trial: self.objective(
-                trial, X_scaled, y_train_high, df, org_df, len(test_data)
-            ),
-            n_trials=50,
-        )  # 尝试100组参数组
 
-        # 输出最佳参数
-        print("Number of finished trials: ", len(study.trials))
-        print("Best trial:")
-        trial = study.best_trial
-        print("  Value (RMSE): ", trial.value)
-        print("  Params: ")
-        for key, value in trial.params.items():
-            print("    {}: {}".format(key, value))
-
-        # 使用最佳参数训练最终模型
-        best_params = trial.params
-        best_params.update(
-            {
-                "random_state": 42,
-                "verbose": -1,
-                "objective": "regression",
-                "metric": "rmse",
-            }
-        )
         # 合并训练集和验证集用于模型训练
+        train_valid_data = pd.concat([train_data, valid_data])
 
         # 初始化存储预测结果的列表
         all_high_preds = []
@@ -579,59 +304,31 @@ class StockPredictor:
         start_index = len(train_valid_data)
         end_index = len(df)  # 预测当天数据，所以可以到最后一个数据点
 
+        y_train_high = df["target_high"]
+        X_train = df[self.feature_columns]
         print(f"开始滚动回测，从索引 {start_index} 到 {end_index}")
-        self.model_high = lgb.LGBMRegressor(**best_params)
+        self.model_high = lgb.LGBMRegressor(
+            n_estimators=150,
+            learning_rate=0.05,
+            verbose=-1,
+            max_depth=3,  # 减小深度，防止过拟合
+            min_child_samples=20,  # 增加最小叶子样本数
+            subsample=0.8,  # 行采样
+            colsample_bytree=0.8,  # 列采样
+            reg_alpha=0.1,  # L1正则化
+            reg_lambda=0.1,  # L2正则化
+            random_state=42,
+            objective="regression",
+            metric="rmse",
+        )
+        X_scaled = self.scaler.fit_transform(X_train)
         self.model_high.fit(X_scaled, y_train_high)
-        self.model_low = lgb.LGBMRegressor(**best_params)
-        self.model_low.fit(X_scaled, y_train_low)
-        self.model_close = lgb.LGBMRegressor(**best_params)
-        self.model_close.fit(X_scaled, y_train_close)
-        study = optuna.create_study(direction="minimize")  # 最小化RMSE
-        study.optimize(
-            lambda trial: self.objective_change(
-                trial, X_scaled, y_train_change, df, org_df, len(test_data)
-            ),
-            n_trials=50,
-        )
-        best_params = trial.params
-        best_params.update(
-            {
-                "random_state": 42,
-                "verbose": -1,
-                "objective": "regression",
-                "metric": "rmse",
-            }
-        )
-        self.model_change = lgb.LGBMRegressor(**best_params)
-        self.model_change.fit(X_scaled, y_train_change)
-        study = optuna.create_study(direction="minimize")  # 最小化RMSE
-        study.optimize(
-            lambda trial: self.objective_direction(
-                trial, X_scaled, y_train_direction, df, org_df, len(test_data)
-            ),
-            n_trials=50,
-        )  # 尝试100组参数组
-        best_params = trial.params
-        best_params.update(
-            {
-                "random_state": 42,
-                "verbose": -1,
-                "objective": "binary",
-                "metric": ["auc", "binary_logloss"],
-            }
-        )
-        self.model_direction = lgb.LGBMClassifier(**best_params)
-        self.model_direction.fit(X_scaled, y_train_direction)
-
-        # y_train_change = df["target_change"]
-        # X_train = df[self.feature_columns]
-        # X_scaled = self.scaler.fit_transform(X_train)
-
+        org_df = self.df
         for i in range(start_index, end_index):
             # 训练集: 从开始到当前前一天
             # train_data = df.iloc[:i]
 
-            # # 准备训练数据
+            # 准备训练数据
             # X_train = train_data[self.feature_columns]
             # y_train_high = train_data["target_high"]
             # y_train_low = train_data["target_low"]
@@ -645,11 +342,11 @@ class StockPredictor:
             # else:
             #     X_train_scaled = self.scaler.transform(X_train)
 
-            # # 训练回归模型 (预测最高价)
-            # self.model_high = lgb.LGBMRegressor(
+            # 训练回归模型 (预测最高价)
+            # model_high = lgb.LGBMRegressor(
             #     n_estimators=100, learning_rate=0.05, random_state=42, verbose=-1
             # )
-            # self.model_high.fit(X_train_scaled, y_train_high)
+
             # # 训练回归模型 (预测最低价)
             # model_low = lgb.LGBMRegressor(
             #     n_estimators=100, learning_rate=0.05, random_state=42, verbose=-1
@@ -681,31 +378,29 @@ class StockPredictor:
 
             # 进行预测
             pred_high = self.model_high.predict(X_test_scaled)[0]
-            pred_low = self.model_low.predict(X_test_scaled)[0]
-            pred_close = self.model_close.predict(X_test_scaled)[0]
-            pred_change = self.model_change.predict(X_test_scaled)[0]
-            pred_direction = self.model_direction.predict(X_test_scaled)[0]
+            # pred_low = model_low.predict(X_test_scaled)[0]
+            # pred_close = model_close.predict(X_test_scaled)[0]
+            # pred_change = model_change.predict(X_test_scaled)[0]
+            # pred_direction = model_direction.predict(X_test_scaled)[0]
 
             # 获取真实值
             true_high = org_df.iloc[i + 1]["High"]
-            true_low = org_df.iloc[i + 1]["Low"]
-            true_close = org_df.iloc[i + 1]["Close"]
-            true_change = org_df.iloc[i + 1]["Change"]
-            true_direction = (
-                org_df.iloc[i + 1]["Close"] > org_df.iloc[i + 1]["Open"]
-            ).astype(int)
+            # true_low = df.iloc[i]["target_low"]
+            # true_close = df.iloc[i]["target_close"]
+            # true_change = df.iloc[i]["target_change"]
+            # true_direction = df.iloc[i]["target_direction"]
 
             # 存储预测结果和真实值
             all_high_preds.append(pred_high)
             all_high_true.append(true_high)
-            all_low_preds.append(pred_low)
-            all_low_true.append(true_low)
-            all_close_preds.append(pred_close)
-            all_close_true.append(true_close)
-            all_change_preds.append(pred_change)
-            all_change_true.append(true_change)
-            all_direction_preds.append(pred_direction)
-            all_direction_true.append(true_direction)
+            # all_low_preds.append(pred_low)
+            # all_low_true.append(true_low)
+            # all_close_preds.append(pred_close)
+            # all_close_true.append(true_close)
+            # all_change_preds.append(pred_change)
+            # all_change_true.append(true_change)
+            # all_direction_preds.append(pred_direction)
+            # all_direction_true.append(true_direction)
 
             # 存储日期
             if "Date" in df.columns:
@@ -719,10 +414,10 @@ class StockPredictor:
 
         return {
             "high": {"preds": all_high_preds, "true": all_high_true},
-            "low": {"preds": all_low_preds, "true": all_low_true},
-            "close": {"preds": all_close_preds, "true": all_close_true},
-            "change": {"preds": all_change_preds, "true": all_change_true},
-            "direction": {"preds": all_direction_preds, "true": all_direction_true},
+            # "low": {"preds": all_low_preds, "true": all_low_true},
+            # "close": {"preds": all_close_preds, "true": all_close_true},
+            # "change": {"preds": all_change_preds, "true": all_change_true},
+            # "direction": {"preds": all_direction_preds, "true": all_direction_true},
             "dates": all_dates,
         }
 
@@ -801,10 +496,10 @@ class StockPredictor:
 
         # 训练回归模型 (预测最高价)
         self.model_high = lgb.LGBMRegressor(
-            n_estimators=1000,
-            learning_rate=0.01,
+            n_estimators=150,
+            learning_rate=0.05,
             verbose=-1,
-            max_depth=8,  # 减小深度，防止过拟合
+            max_depth=3,  # 减小深度，防止过拟合
             min_child_samples=20,  # 增加最小叶子样本数
             subsample=0.8,  # 行采样
             colsample_bytree=0.8,  # 列采样
@@ -894,21 +589,21 @@ class StockPredictor:
 
         # 进行预测
         pred_high = self.model_high.predict(X_scaled)[0]
-        pred_low = self.model_low.predict(X_scaled)[0]
-        pred_close = self.model_close.predict(X_scaled)[0]
-        pred_change = self.model_change.predict(X_scaled)[0]
+        # pred_low = self.model_low.predict(X_scaled)[0]
+        # pred_close = self.model_close.predict(X_scaled)[0]
+        # pred_change = self.model_change.predict(X_scaled)[0]
 
         # 预测涨跌概率
-        direction_proba = self.model_direction.predict_proba(X_scaled)[0]
-        up_probability = direction_proba[1]  # 上涨概率
+        # direction_proba = self.model_direction.predict_proba(X_scaled)[0]
+        # up_probability = direction_proba[1]  # 上涨概率
 
         return {
             "predicted_high": pred_high,
-            "predicted_low": pred_low,
-            "predicted_close": pred_close,
-            "predicted_change": pred_change,
-            "up_probability": up_probability,
-            "down_probability": 1 - up_probability,
+            # "predicted_low": pred_low,
+            # "predicted_close": pred_close,
+            # "predicted_change": pred_change,
+            # "up_probability": up_probability,
+            # "down_probability": 1 - up_probability,
         }
 
     def predict_for_dates(self, target_dates):
@@ -974,7 +669,7 @@ class StockPredictor:
 
         return predictions
 
-    def plot_results(self, results, symbol, file_date):
+    def plot_results(self, results, df):
         """
         绘制回测结果图表
         """
@@ -984,10 +679,10 @@ class StockPredictor:
         dates = results["dates"]
         high_true = results["high"]["true"]
         high_pred = results["high"]["preds"]
-        low_true = results["low"]["true"]
-        low_pred = results["low"]["preds"]
-        close_true = results["close"]["true"]
-        close_pred = results["close"]["preds"]
+        # low_true = results["low"]["true"]
+        # low_pred = results["low"]["preds"]
+        # close_true = results["close"]["true"]
+        # close_pred = results["close"]["preds"]
 
         # 创建图表
         plt.figure(figsize=(15, 12))
@@ -996,13 +691,13 @@ class StockPredictor:
         plt.subplot(3, 1, 1)
         plt.plot(dates, high_true, "g-", label="实际最高价", alpha=0.7)
         plt.plot(dates, high_pred, "r--", label="预测最高价", alpha=0.7)
-        plt.plot(dates, low_true, "b-", label="实际最低价", alpha=0.7)
-        plt.plot(dates, low_pred, "y--", label="预测最低价", alpha=0.7)
-        plt.plot(dates, close_true, "k-", label="实际收盘价", alpha=0.7)
-        plt.plot(dates, close_pred, "m--", label="预测收盘价", alpha=0.7)
-        plt.fill_between(
-            dates, low_pred, high_pred, color="orange", alpha=0.2, label="预测价格区间"
-        )
+        # plt.plot(dates, low_true, "b-", label="实际最低价", alpha=0.7)
+        # plt.plot(dates, low_pred, "y--", label="预测最低价", alpha=0.7)
+        # plt.plot(dates, close_true, "k-", label="实际收盘价", alpha=0.7)
+        # plt.plot(dates, close_pred, "m--", label="预测收盘价", alpha=0.7)
+        # plt.fill_between(
+        #     dates, low_pred, high_pred, color="orange", alpha=0.2, label="预测价格区间"
+        # )
         plt.title("价格预测 vs 实际价格")
         plt.xlabel("日期")
         plt.ylabel("价格")
@@ -1010,49 +705,45 @@ class StockPredictor:
         plt.xticks(rotation=45)
 
         # 绘制涨跌幅预测
-        change_true = results["change"]["true"]
-        change_pred = results["change"]["preds"]
+        # change_true = results["change"]["true"]
+        # change_pred = results["change"]["preds"]
 
-        plt.subplot(3, 1, 2)
-        plt.plot(dates, change_true, "b-", label="实际涨跌幅", alpha=0.7)
-        plt.plot(dates, change_pred, "r--", label="预测涨跌幅", alpha=0.7)
-        plt.axhline(y=0, color="k", linestyle="-", alpha=0.3)
-        plt.title("涨跌幅预测 vs 实际涨跌幅")
-        plt.xlabel("日期")
-        plt.ylabel("涨跌幅")
-        plt.legend()
-        plt.xticks(rotation=45)
+        # plt.subplot(3, 1, 2)
+        # plt.plot(dates, change_true, "b-", label="实际涨跌幅", alpha=0.7)
+        # plt.plot(dates, change_pred, "r--", label="预测涨跌幅", alpha=0.7)
+        # plt.axhline(y=0, color="k", linestyle="-", alpha=0.3)
+        # plt.title("涨跌幅预测 vs 实际涨跌幅")
+        # plt.xlabel("日期")
+        # plt.ylabel("涨跌幅")
+        # plt.legend()
+        # plt.xticks(rotation=45)
 
         # 绘制分类准确率
-        direction_true = results["direction"]["true"]
-        direction_pred = results["direction"]["preds"]
-        accuracy_rolling = [
-            np.mean(
-                np.array(direction_true[: i + 1]) == np.array(direction_pred[: i + 1])
-            )
-            for i in range(len(direction_true))
-        ]
+        # direction_true = results["direction"]["true"]
+        # direction_pred = results["direction"]["preds"]
+        # accuracy_rolling = [
+        #     np.mean(
+        #         np.array(direction_true[: i + 1]) == np.array(direction_pred[: i + 1])
+        #     )
+        #     for i in range(len(direction_true))
+        # ]
 
-        plt.subplot(3, 1, 3)
-        plt.plot(dates, accuracy_rolling, "b-", label="滚动准确率")
-        plt.axhline(y=0.5, color="r", linestyle="-", label="随机猜测 (0.5)", alpha=0.5)
-        plt.title("涨跌方向预测准确率随时间变化")
-        plt.xlabel("日期")
-        plt.ylabel("准确率")
-        plt.legend()
-        plt.xticks(rotation=45)
+        # plt.subplot(3, 1, 3)
+        # plt.plot(dates, accuracy_rolling, "b-", label="滚动准确率")
+        # plt.axhline(y=0.5, color="r", linestyle="-", label="随机猜测 (0.5)", alpha=0.5)
+        # plt.title("涨跌方向预测准确率随时间变化")
+        # plt.xlabel("日期")
+        # plt.ylabel("准确率")
+        # plt.legend()
+        # plt.xticks(rotation=45)
 
-        plt.tight_layout()
-        plt.savefig(
-            f"output/{symbol}/{file_date}/_backtest_results.png",
-            dpi=300,
-            bbox_inches="tight",
-        )
-        # plt.show()
+        # plt.tight_layout()
+        plt.savefig(f"{self.symbol}_backtest_results.png", dpi=300, bbox_inches="tight")
+        plt.show()
 
 
 # 主函数
-def run_strategy_development_action(symbol, file_date):
+def run_strategy_development_action(symbol, data_path):
     """
     主函数：执行完整的策略评估流程
 
@@ -1063,7 +754,7 @@ def run_strategy_development_action(symbol, file_date):
     """
     # 1. 加载数据
     print("加载数据...")
-    df = df = pd.read_csv(f"output/{symbol}/{file_date}/data.csv")
+    df = pd.read_csv(data_path)
 
     print(f"数据加载完成，共 {len(df)} 条记录")
     print(f"数据列: {list(df.columns)}")
@@ -1085,33 +776,30 @@ def run_strategy_development_action(symbol, file_date):
     df["MA5"] = df["Close"].rolling(5).mean().shift(1)
     df["MA10"] = df["Close"].rolling(10).mean().shift(1)
     df["MA20"] = df["Close"].rolling(20).mean().shift(1)
-    df["HighMean"] = df["High"].rolling(5).mean().shift(1)
-    df["HighStd"] = df["High"].rolling(5).std().shift(1)
-    df["HighMax"] = df["High"].rolling(5).max().shift(1)
     # 指数移动平均线
     df["EMA12"] = df["Close"].ewm(span=12, adjust=False).mean().shift(1)
     df["EMA26"] = df["Close"].ewm(span=26, adjust=False).mean().shift(1)
     df["MACD"] = df["EMA12"] - df["EMA26"]
-    lags = [1, 5, 30]
+    lags = [1, 2, 3, 5, 10]
     for lag in lags:
         df[f"Close_LAG_{lag}"] = df["Close"].shift(lag)
         df[f"Volume_LAG_{lag}"] = df["Volume"].shift(lag)
-        df[f"High_LAG_{lag}"] = df["High"].shift(lag)
     delta = df["Close"].diff()
     gain = (delta.where(delta > 0, 0)).rolling(14).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
     rs = gain / loss
     df["RSI"] = 100 - (100 / (1 + rs)).shift(1)
     # 3. 波动率
-    df["Returns"] = df["Close"].pct_change().shift(1)
-    df["Volatility"] = df["Returns"].rolling(20).std()
+    df["Returns"] = df["Close"].pct_change()
+    df["Volatility"] = df["Returns"].rolling(20).std().shift(1)
     # 4. 日期特征
     df["Date1"] = pd.to_datetime(df["Date"])
     df["DayOfWeek"] = df["Date1"].dt.dayofweek
     df["Month"] = df["Date1"].dt.month
     df["Quarter"] = df["Date1"].dt.quarter
+    new_df = df.iloc[:-1]
     predictor.df = df
-    df_processed = predictor.prepare_features_and_targets(df)
+    df_processed = predictor.prepare_features_and_targets(new_df)
     predictor.df_processed = df_processed  # 保存处理后的数据供后续使用
     print(f"特征工程完成，剩余 {len(df_processed)} 条有效记录")
 
@@ -1127,7 +815,7 @@ def run_strategy_development_action(symbol, file_date):
 
     # # 5. 评估模型性能
     # print("评估模型性能...")
-    metrics = predictor.evaluate_model(backtest_results)
+    # metrics = predictor.evaluate_model(backtest_results)
 
     # 6. 使用全部数据训练最终模型
     # print("使用全部数据训练最终模型...")
@@ -1142,20 +830,20 @@ def run_strategy_development_action(symbol, file_date):
     print(latest_data)
     latest_pred = predictor.predict_day(latest_data)
     # 添加日期信息
-    if "Date" in df.columns:
-        latest_date = pd.to_datetime(df["Date"]).max().strftime("%Y%m%d")
+    if "Date" in df_processed.columns:
+        latest_date = df_processed["Date"].max().strftime("%Y%m%d")
         latest_pred["prediction_date"] = latest_date
 
     # 8. 绘制结果图表
     print("绘制结果图表...")
-    predictor.plot_results(backtest_results, symbol, file_date)
+    predictor.plot_results(backtest_results, df_processed)
 
     # 9. 输出结果
     result = {
         "symbol": symbol,
         "model_used": "LightGBM",
         "features": predictor.feature_columns,
-        "backtest_metrics": metrics,
+        # "backtest_metrics": metrics,
         "latest_prediction": latest_pred,
         "data_points": {"original": len(df), "processed": len(df_processed)},
     }
@@ -1168,45 +856,33 @@ def run_strategy_development_action(symbol, file_date):
     # )
 
     # print("\n回测指标:")
-    module_dec = "回测指标:"
-    for metric, value in result["backtest_metrics"].items():
-        if "mape" in metric:
-            module_dec += f"  {metric}: {value:.2f}%"
-        elif "r2" in metric:
-            module_dec += f"  {metric}: {value:.4f}"
-        else:
-            module_dec += f"  {metric}: {value:.6f}"
+    # for metric, value in result["backtest_metrics"].items():
+    #     if "mape" in metric:
+    #         print(f"  {metric}: {value:.2f}%")
+    #     elif "r2" in metric:
+    #         print(f"  {metric}: {value:.4f}")
+    #     else:
+    #         print(f"  {metric}: {value:.6f}")
 
-    # print("\n最新日期预测:")
-    # if "prediction_date" in result["latest_prediction"]:
-    #     print(f"  预测日期: {result['latest_prediction']['prediction_date']}")
-    # print(f"  预测最高价: {result['latest_prediction']['predicted_high']:.4f}")
-    # print(f"  预测最低价: {result['latest_prediction']['predicted_low']:.4f}")
+    print("\n最新日期预测:")
+    if "prediction_date" in result["latest_prediction"]:
+        print(f"  预测日期: {result['latest_prediction']['prediction_date']}")
+    print(f"  预测最高价: {result['latest_prediction']['predicted_high']:.4f}")
+    print(f"  预测最低价: {result['latest_prediction']['predicted_low']:.4f}")
     # print(f"  预测收盘价: {result['latest_prediction']['predicted_close']:.4f}")
     # print(f"  预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%")
     # print(f"  上涨概率: {result['latest_prediction']['up_probability']:.4f}")
     # print(f"  下跌概率: {result['latest_prediction']['down_probability']:.4f}")
 
-    return (
-        module_dec
-        + f"""  
-      预测结果:
-      预测最高价: {result['latest_prediction']['predicted_high']:.4f}
-      预测最低价: {result['latest_prediction']['predicted_low']:.4f}
-      预测收盘价: {result['latest_prediction']['predicted_close']:.4f}
-      预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%
-      上涨概率: {result['latest_prediction']['up_probability']:.4f}
-      下跌概率: {result['latest_prediction']['down_probability']:.4f}
-    """
-    )
+    return result
 
 
 # 使用示例
-def run_strategy_development(symbol, file_date):
+def run_strategy_development(symbol, data_path):
     setup_chinese_font()
     # # 执行策略评估
-    result = run_strategy_development_action(symbol, file_date)
-    return result
+    result = run_strategy_development_action(symbol, data_path)
+
     # # 保存结果到文件
     # import json
 

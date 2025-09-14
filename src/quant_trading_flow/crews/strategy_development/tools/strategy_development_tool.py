@@ -369,9 +369,9 @@ def optimize_for_high_return(symbol: str, file_date: str) -> str:
     df["Date"] = pd.to_datetime(df["Date"])
     df.set_index("Date", inplace=True)
     df.sort_index(ascending=True, inplace=True)
-    return f"""
-    最新1000天交易数据: {df.tail(1000).to_string()}
-    """
+    # return f"""
+    # 最新1000天交易数据: {df.tail(1000).to_string()}
+    # """
     # 默认使用我们的高收益策略
     strategy_df = high_return_strategy(df)
     final_value, total_return, trade_log, portfolio_df, trade_details, res_details = (
