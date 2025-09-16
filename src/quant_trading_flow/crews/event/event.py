@@ -34,7 +34,7 @@ class EventAnalysisCrew:
             verbose=True,
             max_retry_limit=5,
             max_execution_time=1800,
-            llm=openai_llm,
+            llm=deepseek_llm,
             # tools=[WebsiteSearchTool],
         )
 

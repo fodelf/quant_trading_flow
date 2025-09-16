@@ -171,10 +171,10 @@ class TradingFlow(Flow[TradingState]):
 
     @listen(init_market_data)
     def event_analysis(self, market_data):
-        self.state.stock_events_analysis = get_stock_events_analysis(
-            stock_code=market_data["symbol"],
-            target_date_str=market_data["end_date"],
-        )
+        # self.state.stock_events_analysis = get_stock_events_analysis(
+        #     stock_code=market_data["symbol"],
+        #     target_date_str=market_data["end_date"],
+        # )
         result = EventAnalysisCrew().crew().kickoff(inputs=getData(self.state))
         self.state.event_data = result.raw
         return result.raw
@@ -217,6 +217,10 @@ class TradingFlow(Flow[TradingState]):
     def strategy_has_development(self):
         market_data = getData(self.state)
         self.state.strategy = optimize_for_high_return(
+            symbol=market_data["symbol"],
+            file_date=market_data["file_date"],
+        )
+        self.state.prediction = run_strategy_development(
             symbol=market_data["symbol"],
             file_date=market_data["file_date"],
         )
@@ -274,7 +278,7 @@ class TradingFlow(Flow[TradingState]):
     @router(and_(trade_up_management, trade_down_management))
     def trade_management(self):
         result = CfoCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.trade_approval_flag = "同意买入" in result.raw
+        self.state.trade_approval_flag = "【同意买入】" in result.raw
         if self.state.trade_approval_flag:
             return "trade_approval_pass"
         else:
@@ -295,11 +299,11 @@ class TradingFlow(Flow[TradingState]):
     @router(and_(trade_has_up_management, trade_has_down_management))
     def trade_has_management(self):
         result = CfoHasCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.trade_approval_flag = "同意卖出" in result.raw
+        self.state.trade_approval_flag = "【同意卖出】" not in result.raw
         if self.state.trade_approval_flag:
-            return "trade_sell"
-        else:
             return "trade_handel"
+        else:
+            return "trade_sell"
 
     @router("trade_approval_pass")
     def trade_decision(self):
@@ -374,31 +378,35 @@ def kickoff():
     # csv_values = ["601727"]
     # handle_values = ["8.62"]
     # time_values = ["20250813"]
-    # stock_list = get_filtered_stocks()
-    # result = (
-    #     StockScreenerCrew()
-    #     .crew()
-    #     .kickoff(
-    #         inputs={
-    #             "end_date": datetime.now().strftime("%Y%m%d"),
-    #             "stock_list": stock_list,
-    #         }
-    #     )
-    # )
-    # extract_json = extract_json_from_text(result.raw)
-    # stock_list = extract_json.get("stock_list", [])
+    stock_list = get_filtered_stocks()
+    result = (
+        StockScreenerCrew()
+        .crew()
+        .kickoff(
+            inputs={
+                "end_date": datetime.now().strftime("%Y%m%d"),
+                "stock_list": stock_list,
+            }
+        )
+    )
+    extract_json = extract_json_from_text(result.raw)
+    stock_list = extract_json.get("stock_list", [])
     # print(run_strategy_development("600207", "20250909234221"))
     # return
-    stock_list = ["688006"]
+    # stock_list = ["605298", "605288", "603717", "688370"]
+    # stock_list = ["605298"]
     symbols = list(map(create_object_default, stock_list))
     runTask(symbols)
-    return
+    # return
     # csv_values = read_csv_values("has_trade.csv", "Value")
     # handle_values = read_csv_values("has_trade.csv", "Handle")
     # time_values = read_csv_values("has_trade.csv", "Time")
-    csv_values = ["601919"]
-    handle_values = ["15.90"]
-    time_values = ["20250731"]
+    # csv_values = ["601168"]
+    # handle_values = ["20.10"]
+    # time_values = ["20250915"]
+    # csv_values = ["601880"]
+    # handle_values = ["1.80"]
+    # time_values = ["20250915"]
     # csv_values = ["600875"]
     # handle_values = ["20.80"]
     # time_values = ["20250729"]

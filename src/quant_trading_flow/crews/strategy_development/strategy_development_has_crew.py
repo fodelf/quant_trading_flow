@@ -49,7 +49,7 @@ class StrategyDevelopmentHasCrew:
         return Agent(
             config=self.agents_config["strategy_development"],  # type: ignore[index]
             verbose=True,
-            llm=deepseek_llm,
+            llm=openai_llm,
             max_retry_limit=5,
             max_execution_time=1800,
             # tools=[
