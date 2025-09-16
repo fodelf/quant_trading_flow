@@ -397,7 +397,7 @@ def kickoff():
     # stock_list = ["605298"]
     symbols = list(map(create_object_default, stock_list))
     runTask(symbols)
-    # return
+    return
     # csv_values = read_csv_values("has_trade.csv", "Value")
     # handle_values = read_csv_values("has_trade.csv", "Handle")
     # time_values = read_csv_values("has_trade.csv", "Time")
