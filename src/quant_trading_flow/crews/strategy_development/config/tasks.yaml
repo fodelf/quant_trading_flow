@@ -1,29 +1,27 @@
 strategy_task:
   description: >
     针对股票{symbol}进行策略评估，输出交易策略
-      1.分析策略交易数据:{strategy}
-      2.分析模型预测数据:{prediction}
-      3.分析交易数据:{data_report}
+      1.分析模型预测数据:{prediction}
+      2.分析交易数据:{data_report}
   expected_output: >
     输出股票{symbol}相关策略的总结性报告（报告必须是中文）。
       1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题。
       2.必须输出预测下一个交易日涨跌概率以及预测下一个交易日最高价，最低价，收盘价。
-      3.根据回测指标，分析模型的预测能力以及置信度分析。
-      4.根据策略交易数据和模型预测数据,交易数据以及置信度分析，在当前时间{end_date}下对于股票{symbol}下个交易日做出详细的策略建议。
+      3.根据回测指标，分析模型的预测能力以及置信度。
+      4.根据模型预测数据以及预测能力和置信度，在当前时间{end_date}下对于股票{symbol}下个交易日做出详细的策略建议。
   agent: strategy_development
   output_file: output/{symbol}/{file_date}/strategy_report.md
 
 strategy_task_has:
   description: >
     针对股票{symbol}进行策略评估，输出交易策略
-      1.分析策略交易数据:{strategy}
-      2.分析模型预测数据:{prediction}
-      3.分析交易数据:{data_report}
+      1.分析模型预测数据:{prediction}
+      2.分析交易数据:{data_report}
   expected_output: >
     输出股票{symbol}相关策略的总结性报告（报告必须是中文）
       1.报告中以股票代码加股票中文名称加策略报告加{end_date}作为标题
       2.必须输出预测下一个交易日涨跌概率以及预测下一个交易日最高价，最低价，收盘价。
-      3.根据回测指标，分析模型的预测能力以及置信度分析。
-      4.根据策略交易数据和模型预测数据,交易数据以及置信度分析，给出交易建议，包含必须包含当前时间{end_date}下，成本价是{current_price}，买入时间是{handel_time}，对于股票{symbol}执行的交易策略是加仓，卖出，持有其中的哪一个，并详细说明原因
+      3.根据回测指标，分析模型的预测能力以及置信度。
+      4.根据模型预测数据以及预测能力和置信度，当前时间{end_date}下，成本价是{current_price}，买入时间是{handel_time}，对于股票{symbol}执行的交易策略是加仓，卖出，持有其中的哪一个，并详细说明原因
   agent: strategy_development
   output_file: output/{symbol}/{file_date}/strategy_report.md

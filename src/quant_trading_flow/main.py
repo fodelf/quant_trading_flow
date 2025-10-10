@@ -2,6 +2,7 @@
 import time
 from pydantic import BaseModel
 import os
+from crewai import Flow
 from crewai.flow import Flow, listen, start, and_, router, or_
 
 from datetime import datetime
@@ -125,6 +126,18 @@ def getData(state):
     }
 
 
+class SubFlowA(Flow):
+    @step
+    def run(self, data):
+        print("SubFlowA:", data)
+
+
+class SubFlowB(Flow):
+    @step
+    def run(self, data):
+        print("SubFlowB:", data)
+
+
 class TradingFlow(Flow[TradingState]):
 
     # @start()
@@ -141,6 +154,13 @@ class TradingFlow(Flow[TradingState]):
 
     @start()
     def init_market_data(self):
+        stock_data = get_china_stock_data(
+            symbol=self.state["symbol"],
+            start_date=self.state["start_date"],
+            end_date=self.state["end_date"],
+            file_date=self.state["file_date"],
+        )
+        self.state.stock_data = stock_data
         return getData(self.state)
 
     # @listen("init_market_data")
@@ -148,14 +168,7 @@ class TradingFlow(Flow[TradingState]):
     #     return getData(self.state)
 
     @listen(init_market_data)
-    def handle_data(self, market_data):
-        stock_data = get_china_stock_data(
-            symbol=market_data["symbol"],
-            start_date=market_data["start_date"],
-            end_date=market_data["end_date"],
-            file_date=market_data["file_date"],
-        )
-        self.state.stock_data = stock_data
+    def handle_data(self):
         result = DataEngineerCrew().crew().kickoff(inputs=getData(self.state))
         self.state.data_report = result.raw
         return result.raw
@@ -191,7 +204,7 @@ class TradingFlow(Flow[TradingState]):
         self.state.public_sentiment = result.raw
         return result.raw
 
-    @router(handle_data)
+    @router(init_market_data)
     def strategy_development_decision(self):
         if self.state.has_flag:
             return "strategy_has_decision"
@@ -263,19 +276,20 @@ class TradingFlow(Flow[TradingState]):
         self.state.risk_management = result.raw
         return result.raw
 
-    @listen(risk_management)
-    def trade_up_management(self):
-        result = CfoUpCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.up_data = result.raw
-        return result.raw
+    # @listen(risk_management)
+    # def trade_up_management(self):
+    #     result = CfoUpCrew().crew().kickoff(inputs=getData(self.state))
+    #     self.state.up_data = result.raw
+    #     return result.raw
 
-    @listen(risk_management)
-    def trade_down_management(self):
-        result = CfoDownCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.down_data = result.raw
-        return result.raw
+    # @listen(risk_management)
+    # def trade_down_management(self):
+    #     result = CfoDownCrew().crew().kickoff(inputs=getData(self.state))
+    #     self.state.down_data = result.raw
+    #     return result.raw
 
-    @router(and_(trade_up_management, trade_down_management))
+    # @router(and_(trade_up_management, trade_down_management))
+    @router(risk_management)
     def trade_management(self):
         result = CfoCrew().crew().kickoff(inputs=getData(self.state))
         self.state.trade_approval_flag = "【同意买入】" in result.raw
@@ -284,19 +298,20 @@ class TradingFlow(Flow[TradingState]):
         else:
             return "approval_reject"
 
-    @listen(risk_has_management)
-    def trade_has_up_management(self):
-        result = CfoHasUpCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.up_data = result.raw
-        return "has_up_management"
+    # @listen(risk_has_management)
+    # def trade_has_up_management(self):
+    #     result = CfoHasUpCrew().crew().kickoff(inputs=getData(self.state))
+    #     self.state.up_data = result.raw
+    #     return "has_up_management"
 
-    @listen(risk_has_management)
-    def trade_has_down_management(self):
-        result = CfoHasDownCrew().crew().kickoff(inputs=getData(self.state))
-        self.state.down_data = result.raw
-        return "has_down_management"
+    # @listen(risk_has_management)
+    # def trade_has_down_management(self):
+    #     result = CfoHasDownCrew().crew().kickoff(inputs=getData(self.state))
+    #     self.state.down_data = result.raw
+    #     return "has_down_management"
 
-    @router(and_(trade_has_up_management, trade_has_down_management))
+    # @router(and_(trade_has_up_management, trade_has_down_management))
+    @router(risk_has_management)
     def trade_has_management(self):
         result = CfoHasCrew().crew().kickoff(inputs=getData(self.state))
         self.state.trade_approval_flag = "【同意卖出】" not in result.raw
@@ -364,13 +379,18 @@ def runTask(list):
         TradingState.handel_time = item["handel_time"]
         TradingState.symbol_alice = item["symbol_alice"]
         TradingState.symbol = item["symbol"]
-        trading_flow = TradingFlow()
-        start = time.perf_counter()
-        trading_flow.kickoff()
-        elapsed = time.perf_counter() - start
-        minutes = int(elapsed // 60)
-        seconds = elapsed % 60
-        print(f"一个flow执行耗时: {minutes}分{seconds:.2f}秒")
+        try:
+            trading_flow = TradingFlow()
+            start = time.perf_counter()
+            trading_flow.kickoff()
+            elapsed = time.perf_counter() - start
+            minutes = int(elapsed // 60)
+            seconds = elapsed % 60
+            print(f"一个flow执行耗时: {minutes}分{seconds:.2f}秒")
+        except ValueError as e:
+            print(f"项目处理失败: {e}")
+        except Exception as e:
+            print(f"项目发生未知错误: {e}")
 
 
 def kickoff():
@@ -378,38 +398,37 @@ def kickoff():
     # csv_values = ["601727"]
     # handle_values = ["8.62"]
     # time_values = ["20250813"]
-    stock_list = get_filtered_stocks()
-    result = (
-        StockScreenerCrew()
-        .crew()
-        .kickoff(
-            inputs={
-                "end_date": datetime.now().strftime("%Y%m%d"),
-                "stock_list": stock_list,
-            }
-        )
-    )
-    extract_json = extract_json_from_text(result.raw)
-    stock_list = extract_json.get("stock_list", [])
-    # print(run_strategy_development("600207", "20250909234221"))
-    # return
-    # stock_list = ["605298", "605288", "603717", "688370"]
-    # stock_list = ["605298"]
+    # stock_list = get_filtered_stocks()
+    # result = (
+    #     StockScreenerCrew()
+    #     .crew()
+    #     .kickoff(
+    #         inputs={
+    #             "end_date": datetime.now().strftime("%Y%m%d"),
+    #             "stock_list": stock_list,
+    #         }
+    #     )
+    # )
+    # extract_json = extract_json_from_text(result.raw)
+    # stock_list = extract_json.get("stock_list", [])
+    # print(run_strategy_development("603166", "20250925001058"))
+    # # stock_list = ["003022", "002218", "600933", "002077"]
+    stock_list = ["688325"]
     symbols = list(map(create_object_default, stock_list))
     runTask(symbols)
     return
     # csv_values = read_csv_values("has_trade.csv", "Value")
     # handle_values = read_csv_values("has_trade.csv", "Handle")
     # time_values = read_csv_values("has_trade.csv", "Time")
-    # csv_values = ["601168"]
-    # handle_values = ["20.10"]
-    # time_values = ["20250915"]
-    # csv_values = ["601880"]
-    # handle_values = ["1.80"]
-    # time_values = ["20250915"]
-    # csv_values = ["600875"]
-    # handle_values = ["20.80"]
-    # time_values = ["20250729"]
+    # csv_values = ["002100"]
+    # handle_values = ["7.56"]
+    # time_values = ["20250921"]
+    # csv_values = ["601880", "600875"]
+    # handle_values = ["1.80", "20.80"]
+    # time_values = ["20250915", "20250915"]
+    csv_values = ["002100"]
+    handle_values = ["7.56"]
+    time_values = ["20250921"]
     # csv_values = ["600406"]
     # handle_values = ["22.5"]
     # time_values = ["20250725"]

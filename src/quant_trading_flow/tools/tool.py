@@ -68,7 +68,7 @@ def create_object(num, current_price, time):
         "symbol_alice": symbol_alice,
         "start_date": "20180101",
         "end_date": datetime.now().strftime("%Y%m%d"),
-        # "end_date": "20250827",
+        # "end_date": "20250925",
         # "file_date": "20250720215308",
         "file_date": datetime.now().strftime("%Y%m%d%H%M%S"),
         "handel_time": time,
@@ -82,8 +82,8 @@ def create_object_default(num):
         "current_price": 0,
         "symbol": str(num).zfill(6),
         "start_date": "20180101",
-        "end_date": datetime.now().strftime("%Y%m%d"),
-        # "end_date": "20250915",
+        # "end_date": datetime.now().strftime("%Y%m%d"),
+        "end_date": "20250925",
         # "end_date": "20250814",
         "symbol_alice": (
             str(num).zfill(6) + ".SH"

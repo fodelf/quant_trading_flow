@@ -9,7 +9,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     r2_score,
-    log_loss,
+    roc_auc_score,
 )
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import TimeSeriesSplit
@@ -23,6 +23,7 @@ import matplotlib.font_manager as fm
 from datetime import datetime
 
 warnings.filterwarnings("ignore")
+
 
 n_trials = 50
 
@@ -378,10 +379,16 @@ class StockPredictor:
         # 返回平均RMSE
         return np.mean(scores)
 
-    def objective_direction(self, trial, X_scaled, y_train_high, df, org_df, test_size):
+    def objective_direction(
+        self, trial, X_scaled, y_train_direction, df, org_df, test_size
+    ):
         """Optuna目标函数，用于优化LightGBM参数"""
         # 参数建议范围
         params = {
+            # 超参数搜索空间
+            "boosting_type": trial.suggest_categorical(
+                "boosting_type", ["gbdt", "dart"]
+            ),
             "num_leaves": trial.suggest_int("num_leaves", 20, 100),
             "max_depth": trial.suggest_int("max_depth", 3, 10),
             "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.1, log=True),
@@ -391,35 +398,36 @@ class StockPredictor:
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0.7, 1.0),
             "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 0.5),
             "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 0.5),
-            "boosting_type": "gbdt",
-            "random_state": 42,
             "objective": "binary",
-            "metric": "binary_logloss",  # 使用对数损失作为优化目标
+            "random_state": 42,
+            "metric": ["auc", "binary_logloss"],
             "verbosity": -1,
         }
         # 创建模型
-        model = lgb.LGBMClassifier(**params)
+        model = lgb.LGBMRegressor(**params)
         # 3. 训练模型
-        model.fit(X_scaled, y_train_high)
+        model.fit(X_scaled, y_train_direction)
         end_index = len(df)
         start_index = end_index - test_size
-        all_high_preds = []
-        all_high_true = []
-        scores = []
+        all_direction_preds = []
+        all_direction_true = []
         for i in range(start_index, end_index):
             test_data = org_df.iloc[i : i + 1]
             X_test = test_data[self.feature_columns]
             X_test_scaled = self.scaler.transform(X_test)
             pred_high = model.predict(X_test_scaled)[0]
             true_high = (org_df.iloc[i + 1]["Change"] > 0).astype(int)
-            all_high_preds.append(pred_high)
-            all_high_true.append(true_high)
+            all_direction_preds.append(pred_high)
+            all_direction_true.append(true_high)
         # 预测并计算RMSE
         # rmse = np.sqrt(accuracy_score(all_high_true, all_high_preds))
         # scores.append(accuracy_score(all_high_true, all_high_preds))
-
+        # print(f"Direction Accuracy: {roc_auc_score(all_high_true, all_high_preds)}")
+        # print(all_high_true)
+        # print("--------------")
+        # print(all_direction_preds)
         # 返回平均RMSE
-        return log_loss(all_high_true, all_high_preds)
+        return roc_auc_score(all_direction_true, all_direction_preds)
 
     # 定义目标函数
     # 3. 定义Optuna目标函数
@@ -429,17 +437,47 @@ class StockPredictor:
         """
         # 划分数据
         train_data, valid_data, test_data = self.split_data(df)
-        train_valid_data1 = pd.concat([train_data, valid_data])
-        train_valid_data = df.copy()
-        # train_valid_data = pd.concat([train_data, valid_data])
-        org_df = self.df
+        train_valid_data = pd.concat([train_data, valid_data])
+        org_df = self.df.copy()
         y_train_high = train_valid_data["target_high"]
         y_train_low = train_valid_data["target_low"]
         y_train_close = train_valid_data["target_close"]
         y_train_change = train_valid_data["target_change"]
         y_train_direction = train_valid_data["target_direction"]
         X_train = train_valid_data[self.feature_columns]
+        X_train_direction = X_train.copy()
         X_scaled = self.scaler.fit_transform(X_train)
+        X_scaled_direction = self.scaler.fit_transform(X_train_direction)
+        # 创建Optuna研究并优化
+        study = optuna.create_study(direction="minimize")  # 最小化RMSE
+        study.optimize(
+            lambda trial: self.objective(
+                trial, X_scaled, y_train_high, df, org_df, len(test_data)
+            ),
+            n_trials=n_trials,
+        )  # 尝试100组参数组
+
+        # 输出最佳参数
+        print("Number of finished trials: ", len(study.trials))
+        print("Best trial:")
+        trial = study.best_trial
+        print("  Value (RMSE): ", trial.value)
+        print("  Params: ")
+        for key, value in trial.params.items():
+            print("    {}: {}".format(key, value))
+
+        # 使用最佳参数训练最终模型
+        best_params = trial.params
+        best_params.update(
+            {
+                "random_state": 42,
+                "verbose": -1,
+                "objective": "regression",
+                "metric": "rmse",
+            }
+        )
+        # 合并训练集和验证集用于模型训练
+
         # 初始化存储预测结果的列表
         all_high_preds = []
         all_high_true = []
@@ -452,27 +490,12 @@ class StockPredictor:
         all_direction_preds = []
         all_direction_true = []
         all_dates = []
+
         # 计算测试集的起始索引
-        start_index = len(train_valid_data1)
-        end_index = len(df)  # 预测当天数据，所以可以到最后一个数据点
-        # 创建Optuna研究并优化
-        study = optuna.create_study(direction="minimize")  # 最小化RMSE
-        study.optimize(
-            lambda trial: self.objective(
-                trial, X_scaled, y_train_high, df, org_df, len(test_data)
-            ),
-            n_trials=n_trials,
-        )  # 尝试100组参数组
-        trial = study.best_trial
-        best_params = trial.params
-        best_params.update(
-            {
-                "random_state": 42,
-                "verbose": -1,
-                "objective": "regression",
-                "metric": "rmse",
-            }
-        )
+        # start_index = len(train_valid_data)
+        end_index = len(df)
+        start_index = end_index - len(test_data)
+        print(f"开始滚动回测，从索引 {start_index} 到 {end_index}")
         self.model_high = lgb.LGBMRegressor(**best_params)
         self.model_high.fit(X_scaled, y_train_high)
         study = optuna.create_study(direction="minimize")  # 最小化RMSE
@@ -494,7 +517,6 @@ class StockPredictor:
         )
         self.model_low = lgb.LGBMRegressor(**best_params)
         self.model_low.fit(X_scaled, y_train_low)
-
         study = optuna.create_study(direction="minimize")  # 最小化RMSE
         study.optimize(
             lambda trial: self.objective(
@@ -514,13 +536,12 @@ class StockPredictor:
         )
         self.model_close = lgb.LGBMRegressor(**best_params)
         self.model_close.fit(X_scaled, y_train_close)
-
         study = optuna.create_study(direction="minimize")  # 最小化RMSE
         study.optimize(
             lambda trial: self.objective_change(
                 trial, X_scaled, y_train_change, df, org_df, len(test_data)
             ),
-            n_trials=n_trials,
+            n_trials=1,
         )
         trial = study.best_trial
         best_params = trial.params
@@ -535,7 +556,7 @@ class StockPredictor:
         self.model_change = lgb.LGBMRegressor(**best_params)
         self.model_change.fit(X_scaled, y_train_change)
 
-        study = optuna.create_study(direction="minimize")  # 最小化RMSE
+        study = optuna.create_study(direction="maximize")
         study.optimize(
             lambda trial: self.objective_direction(
                 trial, X_scaled, y_train_direction, df, org_df, len(test_data)
@@ -546,34 +567,31 @@ class StockPredictor:
         best_params = trial.params
         best_params.update(
             {
-                "random_state": 42,
                 "objective": "binary",
-                "metric": "binary_logloss",  # 使用对数损失作为优化目标
+                "random_state": 42,
+                "metric": ["auc", "binary_logloss"],
                 "verbosity": -1,
             }
         )
-        self.model_direction = lgb.LGBMClassifier(**best_params)
-        self.model_direction.fit(X_scaled, y_train_direction)
+        self.model_direction = lgb.LGBMRegressor(**best_params)
+        self.model_direction.fit(X_scaled_direction, y_train_direction)
         for i in range(start_index, end_index):
             # 准备测试数据 (预测第i天)
-            test_data = org_df.iloc[i : i + 1]
+            test_data = df.iloc[i : i + 1]
             X_test = test_data[self.feature_columns]
             X_test_scaled = self.scaler.transform(X_test)
-
             # 进行预测
             pred_high = self.model_high.predict(X_test_scaled)[0]
             pred_low = self.model_low.predict(X_test_scaled)[0]
             pred_close = self.model_close.predict(X_test_scaled)[0]
             pred_change = self.model_change.predict(X_test_scaled)[0]
             pred_direction = self.model_direction.predict(X_test_scaled)[0]
-
             # 获取真实值
             true_high = org_df.iloc[i + 1]["High"]
             true_low = org_df.iloc[i + 1]["Low"]
             true_close = org_df.iloc[i + 1]["Close"]
             true_change = org_df.iloc[i + 1]["Change"]
             true_direction = (org_df.iloc[i + 1]["Change"] > 0).astype(int)
-
             # 存储预测结果和真实值
             all_high_preds.append(pred_high)
             all_high_true.append(true_high)
@@ -595,8 +613,12 @@ class StockPredictor:
                 print(
                     f"已处理 {i - start_index} / {end_index - start_index} 个测试样本"
                 )
-        print(all_high_preds)
-        print(all_high_true)
+        # print(all_direction_true)
+        # print("--------------")
+        # print(all_direction_preds)
+        # print(
+        #     f"Direction Accuracy: {roc_auc_score(all_direction_true, all_direction_preds)}"
+        # )
         return {
             "high": {"preds": all_high_preds, "true": all_high_true},
             "low": {"preds": all_low_preds, "true": all_low_true},
@@ -650,18 +672,22 @@ class StockPredictor:
         # 分类任务评估 (涨跌方向)
         direction_preds = np.array(results["direction"]["preds"])
         direction_true = np.array(results["direction"]["true"])
-        metrics["direction_accuracy"] = accuracy_score(direction_true, direction_preds)
-        metrics["direction_f1"] = f1_score(direction_true, direction_preds)
-        metrics["direction_precision"] = precision_score(
-            direction_true, direction_preds
-        )
-        metrics["direction_recall"] = recall_score(direction_true, direction_preds)
+        # metrics["direction_accuracy"] = accuracy_score(direction_true, direction_preds)
+        # metrics["direction_f1"] = f1_score(direction_true, direction_preds)
+        # metrics["direction_precision"] = precision_score(
+        #     direction_true, direction_preds
+        # )
+        # metrics["direction_recall"] = recall_score(direction_true, direction_preds)
 
         # 计算方向预测准确率
-        metrics["price_direction_accuracy"] = np.mean(
-            (np.sign(change_preds) == np.sign(change_true)).astype(float)
-        )
-
+        # metrics["price_direction_accuracy"] = np.mean(
+        #     (np.sign(direction_true) == np.sign(direction_preds)).astype(float)
+        # )
+        # 计算涨跌方向准确率
+        # metrics["direction_accuracy"] = accuracy_score(direction_true, direction_preds)
+        # print(results["direction"]["true"])
+        # print(results["direction"]["preds"])
+        metrics["direction_auc"] = roc_auc_score(direction_true, direction_preds)
         return metrics
 
     def train_final_models(self, df):
@@ -694,66 +720,6 @@ class StockPredictor:
         )
         self.model_high.fit(X_scaled, y_high)
 
-        # 训练回归模型 (预测最低价)
-        # self.model_low = lgb.LGBMRegressor(
-        #     n_estimators=150,
-        #     learning_rate=0.05,
-        #     random_state=42,
-        #     verbose=-1,
-        #     max_depth=3,  # 减小深度，防止过拟合
-        #     min_child_samples=20,  # 增加最小叶子样本数
-        #     subsample=0.8,  # 行采样
-        #     colsample_bytree=0.8,  # 列采样
-        #     reg_alpha=0.1,  # L1正则化
-        #     reg_lambda=0.1,  # L2正则化
-        # )
-        # self.model_low.fit(X_scaled, y_low)
-
-        # # 训练回归模型 (预测收盘价)
-        # self.model_close = lgb.LGBMRegressor(
-        #     n_estimators=150,
-        #     learning_rate=0.05,
-        #     random_state=42,
-        #     verbose=-1,
-        #     max_depth=3,  # 减小深度，防止过拟合
-        #     min_child_samples=20,  # 增加最小叶子样本数
-        #     subsample=0.8,  # 行采样
-        #     colsample_bytree=0.8,  # 列采样
-        #     reg_alpha=0.1,  # L1正则化
-        #     reg_lambda=0.1,  # L2正则化
-        # )
-        # self.model_close.fit(X_scaled, y_close)
-
-        # # 训练回归模型 (预测涨跌幅)
-        # self.model_change = lgb.LGBMRegressor(
-        #     n_estimators=150,
-        #     learning_rate=0.05,
-        #     random_state=42,
-        #     verbose=-1,
-        #     max_depth=3,  # 减小深度，防止过拟合
-        #     min_child_samples=20,  # 增加最小叶子样本数
-        #     subsample=0.8,  # 行采样
-        #     colsample_bytree=0.8,  # 列采样
-        #     reg_alpha=0.1,  # L1正则化
-        #     reg_lambda=0.1,  # L2正则化
-        # )
-        # self.model_change.fit(X_scaled, y_change)
-
-        # # 训练分类模型 (预测涨跌方向)
-        # self.model_direction = lgb.LGBMClassifier(
-        #     n_estimators=150,
-        #     learning_rate=0.05,
-        #     random_state=42,
-        #     verbose=-1,
-        #     max_depth=3,  # 减小深度，防止过拟合
-        #     min_child_samples=20,  # 增加最小叶子样本数
-        #     subsample=0.8,  # 行采样
-        #     colsample_bytree=0.8,  # 列采样
-        #     reg_alpha=0.1,  # L1正则化
-        #     reg_lambda=0.1,  # L2正则化
-        # )
-        # self.model_direction.fit(X_scaled, y_direction)
-
     def predict_day(self, data):
         """
         预测指定日期的数据
@@ -777,10 +743,9 @@ class StockPredictor:
         pred_low = self.model_low.predict(X_scaled)[0]
         pred_close = self.model_close.predict(X_scaled)[0]
         pred_change = self.model_change.predict(X_scaled)[0]
-
-        # 预测涨跌概率
-        direction_proba = self.model_direction.predict_proba(X_scaled)[0]
-        up_probability = direction_proba[1]  # 上涨概率
+        up_probability = self.model_direction.predict(X_scaled)[0]
+        # direction_proba = self.model_direction.predict_proba(X_scaled)[0]
+        # up_probability = direction_proba[1] = direction_proba[1]  # 上涨概率
 
         return {
             "predicted_high": pred_high,
@@ -907,8 +872,8 @@ class StockPredictor:
         direction_true = results["direction"]["true"]
         direction_pred = results["direction"]["preds"]
         accuracy_rolling = [
-            np.mean(
-                np.array(direction_true[: i + 1]) == np.array(direction_pred[: i + 1])
+            roc_auc_score(
+                np.array(direction_true[: i + 1]), np.array(direction_pred[: i + 1])
             )
             for i in range(len(direction_true))
         ]
@@ -1048,15 +1013,14 @@ def run_strategy_development_action(symbol, file_date):
     # )
 
     # print("\n回测指标:")
-    # module_dec = "回测指标:"
-    module_dec = ""
-    # for metric, value in result["backtest_metrics"].items():
-    #     if "mape" in metric:
-    #         module_dec += f"  {metric}: {value:.2f}%"
-    #     elif "r2" in metric:
-    #         module_dec += f"  {metric}: {value:.4f}"
-    #     else:
-    #         module_dec += f"  {metric}: {value:.6f}"
+    module_dec = "回测指标:"
+    for metric, value in result["backtest_metrics"].items():
+        if "mape" in metric:
+            module_dec += f"  {metric}: {value:.2f}%"
+        elif "r2" in metric:
+            module_dec += f"  {metric}: {value:.4f}"
+        else:
+            module_dec += f"  {metric}: {value:.6f}"
 
     # print("\n最新日期预测:")
     # if "prediction_date" in result["latest_prediction"]:
@@ -1067,7 +1031,7 @@ def run_strategy_development_action(symbol, file_date):
     # print(f"  预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%")
     # print(f"  上涨概率: {result['latest_prediction']['up_probability']:.4f}")
     # print(f"  下跌概率: {result['latest_prediction']['down_probability']:.4f}")
-
+    #  预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%
     return (
         module_dec
         + f"""  
@@ -1075,7 +1039,6 @@ def run_strategy_development_action(symbol, file_date):
       预测最高价: {result['latest_prediction']['predicted_high']:.4f}
       预测最低价: {result['latest_prediction']['predicted_low']:.4f}
       预测收盘价: {result['latest_prediction']['predicted_close']:.4f}
-      预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%
       上涨概率: {result['latest_prediction']['up_probability']:.4f}
       下跌概率: {result['latest_prediction']['down_probability']:.4f}
     """
