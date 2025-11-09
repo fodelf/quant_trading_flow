@@ -27,7 +27,7 @@ from datetime import datetime
 
 warnings.filterwarnings("ignore")
 
-n_trials = 10
+n_trials = 3
 
 
 def setup_chinese_font():
@@ -121,29 +121,53 @@ class StockPredictor:
         df_filled = df.copy()
 
         # 对于价格和交易量等连续变量，使用线性插值
+        # numeric_cols = [
+        #     "Open",
+        #     "Close",
+        #     "High",
+        #     "Low",
+        #     "Volume",
+        #     "Amount",
+        #     "Change",
+        #     "ChangeAmount",
+        #     "MA10",
+        #     "MA50",
+        #     "EMA12",
+        #     "EMA26",
+        #     "MACD",
+        #     "MACD_Signal",
+        #     "MACD_Hist",
+        #     "RSI",
+        #     "Momentum",
+        #     "ATR",
+        #     "Amplitude",
+        #     "TurnoverRate",
+        # ]
         numeric_cols = [
-            "Open",
-            "Close",
-            "High",
-            "Low",
-            "Volume",
-            "Amount",
-            "Change",
-            "ChangeAmount",
-            "MA10",
-            "MA50",
-            "EMA12",
-            "EMA26",
-            "MACD",
-            "MACD_Signal",
-            "MACD_Hist",
-            "RSI",
-            "Momentum",
-            "ATR",
-            "Amplitude",
-            "TurnoverRate",
+            col
+            for col in df_filled.columns
+            if col
+            not in [
+                "target_high",
+                "target_low",
+                "target_close",
+                "target_change",
+                "target_direction",
+                "target_open",
+                "target_volume",
+                "target_amount",
+                "target_amplitude",
+                "target_turnoverRate",
+                "target_changeAmount",
+                "股票代码",
+                "Date",
+                "Date1",
+                "MACD_Signal",
+                "MACD_Hist",
+                "RSI",
+            ]
+            and not col.startswith("target_")
         ]
-
         for col in numeric_cols:
             if col in df_filled.columns:
                 # 先使用前向填充
@@ -192,15 +216,15 @@ class StockPredictor:
         # 处理缺失值
         df_processed = self.handle_missing_values(df_processed)
 
-        # 定义目标变量 - 下下个交易日数据 (修改: shift(-1) -> shift(-2))
-        df_processed["target_high"] = df_processed["High"].shift(-2)
-        df_processed["target_low"] = df_processed["Low"].shift(-2)
-        df_processed["target_close"] = df_processed["Close"].shift(-2)
-        df_processed["target_change"] = df_processed["Change"].shift(-2)
-        # df_processed["target_open"] = df_processed["Open"].shift(-2)
-        # # 分类目标: 下下个交易日是否上涨 (1: 上涨, 0: 下跌)
+        # 定义目标变量 - 当天数据
+        df_processed["target_high"] = df_processed["High"].shift(-1)
+        df_processed["target_low"] = df_processed["Low"].shift(-1)
+        df_processed["target_close"] = df_processed["Close"].shift(-1)
+        df_processed["target_change"] = df_processed["Change"].shift(-1)
+        df_processed["target_open"] = df_processed["Open"].shift(-1)
+        # # 分类目标: 当天是否上涨 (1: 上涨, 0: 下跌)
         df_processed["target_direction"] = (
-            df_processed["Change"].shift(-2) > 0
+            df_processed["Change"].shift(-1) > 0
         ).astype(int)
 
         # 删除包含NaN的行
@@ -226,41 +250,29 @@ class StockPredictor:
         # ]
 
         self.feature_columns = [
-            "Open",
-            "Close",
-            "High",
-            "Low",
-            "Volume",
-            "Amount",
-            "Amplitude",
-            "Change",
-            "ChangeAmount",
-            "TurnoverRate",
-            "MA5",
-            "MA10",
-            "MA20",
-            "Close_LAG_1",
-            "Close_LAG_5",
-            "Close_LAG_30",
-            "Volume_LAG_1",
-            "Volume_LAG_5",
-            "Volume_LAG_30",
-            "High_LAG_1",
-            "High_LAG_5",
-            "High_LAG_30",
-            "HighMean",
-            "HighStd",
-            "HighMax",
-            "RSI",
-            "Returns",
-            "Volatility",
-            "DayOfWeek",
-            "Month",
-            "Quarter",
-            "EMA12",
-            "EMA26",
-            "MACD",
-            "ATR",
+            col
+            for col in df_processed.columns
+            if col
+            not in [
+                "target_high",
+                "target_low",
+                "target_close",
+                "target_change",
+                "target_direction",
+                "target_open",
+                "target_volume",
+                "target_amount",
+                "target_amplitude",
+                "target_turnoverRate",
+                "target_changeAmount",
+                "股票代码",
+                "Date",
+                "Date1",
+                "MACD_Signal",
+                "MACD_Hist",
+                "RSI",
+            ]
+            and not col.startswith("target_")
         ]
         return df_processed
 
@@ -326,8 +338,7 @@ class StockPredictor:
             X_test = test_data[self.feature_columns]
             X_test_scaled = self.scaler.transform(X_test)
             pred_high = model.predict(X_test_scaled)[0]
-            # 修改: 获取下下个交易日的真实值 (i+2)
-            true_high = org_df.iloc[i + 2]["Change"]
+            true_high = org_df.iloc[i + 1]["Change"]
             all_high_preds.append(pred_high)
             all_high_true.append(true_high)
         # 预测并计算RMSE
@@ -337,7 +348,7 @@ class StockPredictor:
         # 返回平均RMSE
         return np.mean(scores)
 
-    def objective(self, trial, X_scaled, y_train_high, df, org_df, test_size):
+    def objective(self, trial, X_scaled, y_train_high, df, org_df, test_size, key):
         """Optuna目标函数，用于优化LightGBM参数"""
         # 参数建议范围
         params = {
@@ -372,8 +383,7 @@ class StockPredictor:
             X_test = test_data[self.feature_columns]
             X_test_scaled = self.scaler.transform(X_test)
             pred_high = model.predict(X_test_scaled)[0]
-            # 修改: 获取下下个交易日的真实值 (i+2)
-            true_high = org_df.iloc[i + 2]["High"]
+            true_high = org_df.iloc[i + 1][key]
             all_high_preds.append(pred_high)
             all_high_true.append(true_high)
         # 预测并计算RMSE
@@ -416,8 +426,7 @@ class StockPredictor:
             X_test = test_data[self.feature_columns]
             X_test_scaled = self.scaler.transform(X_test)
             pred_high = model.predict(X_test_scaled)[0]
-            # 修改: 获取下下个交易日的真实值 (i+2)
-            true_high = (org_df.iloc[i + 2]["Change"] > 0).astype(int)
+            true_high = (org_df.iloc[i + 1]["Change"] > 0).astype(int)
             all_high_preds.append(pred_high)
             all_high_true.append(true_high)
         # 预测并计算RMSE
@@ -436,15 +445,15 @@ class StockPredictor:
         # 划分数据
         train_data, valid_data, test_data = self.split_data(df)
         train_valid_data1 = pd.concat([train_data, valid_data])
-        train_valid_data = df.copy()
-        # test_data = df.copy()
-        # train_valid_data = pd.concat([train_data, valid_data])
+        # train_valid_data = df.copy()
+        train_valid_data = pd.concat([train_data, valid_data])
         org_df = self.df
         y_train_high = train_valid_data["target_high"]
         y_train_low = train_valid_data["target_low"]
         y_train_close = train_valid_data["target_close"]
         y_train_change = train_valid_data["target_change"]
         y_train_direction = train_valid_data["target_direction"]
+        y_train_open = train_valid_data["target_open"]
         X_train = train_valid_data[self.feature_columns]
         X_scaled = self.scaler.fit_transform(X_train)
         # 初始化存储预测结果的列表
@@ -461,12 +470,12 @@ class StockPredictor:
         all_dates = []
         # 计算测试集的起始索引
         start_index = len(train_valid_data1)
-        end_index = len(df)  # 预测下下个交易日数据，所以可以到倒数第二个数据点
+        end_index = len(df)  # 预测当天数据，所以可以到最后一个数据点
         # 创建Optuna研究并优化
         study = optuna.create_study(direction="minimize")  # 最小化RMSE
         study.optimize(
             lambda trial: self.objective(
-                trial, X_scaled, y_train_high, df, org_df, len(test_data)
+                trial, X_scaled, y_train_high, df, org_df, len(test_data), "High"
             ),
             n_trials=n_trials,
         )  # 尝试100组参数组
@@ -485,7 +494,7 @@ class StockPredictor:
         study = optuna.create_study(direction="minimize")  # 最小化RMSE
         study.optimize(
             lambda trial: self.objective(
-                trial, X_scaled, y_train_low, df, org_df, len(test_data)
+                trial, X_scaled, y_train_low, df, org_df, len(test_data), "Low"
             ),
             n_trials=n_trials,
         )  # 尝试100组参数组
@@ -505,7 +514,27 @@ class StockPredictor:
         study = optuna.create_study(direction="minimize")  # 最小化RMSE
         study.optimize(
             lambda trial: self.objective(
-                trial, X_scaled, y_train_close, df, org_df, len(test_data)
+                trial, X_scaled, y_train_open, df, org_df, len(test_data), "Open"
+            ),
+            n_trials=n_trials,
+        )  # 尝试100组参数组
+        trial = study.best_trial
+        best_params = trial.params
+        best_params.update(
+            {
+                "random_state": 42,
+                "verbose": -1,
+                "objective": "regression",
+                "metric": "rmse",
+            }
+        )
+        self.model_open = lgb.LGBMRegressor(**best_params)
+        self.model_open.fit(X_scaled, y_train_open)
+
+        study = optuna.create_study(direction="minimize")  # 最小化RMSE
+        study.optimize(
+            lambda trial: self.objective(
+                trial, X_scaled, y_train_close, df, org_df, len(test_data), "Close"
             ),
             n_trials=n_trials,
         )  # 尝试100组参数组
@@ -561,7 +590,7 @@ class StockPredictor:
         )
         self.model_direction = lgb.LGBMClassifier(**best_params)
         self.model_direction.fit(X_scaled, y_train_direction)
-        for i in range(start_index, end_index - 1):  # 修改: 循环到倒数第二个数据点
+        for i in range(start_index, end_index):
             # 准备测试数据 (预测第i天)
             test_data = org_df.iloc[i : i + 1]
             X_test = test_data[self.feature_columns]
@@ -574,12 +603,12 @@ class StockPredictor:
             pred_change = self.model_change.predict(X_test_scaled)[0]
             pred_direction = self.model_direction.predict(X_test_scaled)[0]
 
-            # 获取真实值 (下下个交易日)
-            true_high = org_df.iloc[i + 2]["High"]
-            true_low = org_df.iloc[i + 2]["Low"]
-            true_close = org_df.iloc[i + 2]["Close"]
-            true_change = org_df.iloc[i + 2]["Change"]
-            true_direction = (org_df.iloc[i + 2]["Change"] > 0).astype(int)
+            # 获取真实值
+            true_high = org_df.iloc[i + 1]["High"]
+            true_low = org_df.iloc[i + 1]["Low"]
+            true_close = org_df.iloc[i + 1]["Close"]
+            true_change = org_df.iloc[i + 1]["Change"]
+            true_direction = (org_df.iloc[i + 1]["Change"] > 0).astype(int)
 
             # 存储预测结果和真实值
             all_high_preds.append(pred_high)
@@ -600,7 +629,7 @@ class StockPredictor:
             # 每50次迭代打印进度
             if (i - start_index) % 50 == 0:
                 print(
-                    f"已处理 {i - start_index} / {end_index - start_index - 1} 个测试样本"
+                    f"已处理 {i - start_index} / {end_index - start_index} 个测试样本"
                 )
         # print(all_high_preds)
         # print(all_high_true)
@@ -761,27 +790,9 @@ class StockPredictor:
         # )
         # self.model_direction.fit(X_scaled, y_direction)
 
-    # def predict_day_next(self, result):
-    #     next_data = {
-    #         "Close": result["latest_prediction"]["predicted_close"],
-    #         "High": result["latest_prediction"]["predicted_high"],
-    #         "Low": result["latest_prediction"]["predicted_low"],
-    #         "Change": result["latest_prediction"]["predicted_change"],
-    #     }
-
-    #     # 使用self.feature_columns来确保所有需要的特征都存在
-    #     for feature in self.feature_columns:
-    #         if feature not in next_data:
-    #             next_data[feature] = 0
-    #             print(f"警告: 特征 {feature} 不存在，已用 0 填充")
-
-    #     next_df = pd.DataFrame(next_data, index=[0])
-    #     latest_pred = self.predict_day(next_df)
-    #     return latest_pred
-
     def predict_day(self, data):
         """
-        预测下下个交易日的数据
+        预测指定日期的数据
         """
         if (
             self.model_high
@@ -802,6 +813,7 @@ class StockPredictor:
         pred_low = self.model_low.predict(X_scaled)[0]
         pred_close = self.model_close.predict(X_scaled)[0]
         pred_change = self.model_change.predict(X_scaled)[0]
+        pred_open = self.model_open.predict(X_scaled)[0]
 
         # 预测涨跌概率
         direction_proba = self.model_direction.predict_proba(X_scaled)[0]
@@ -812,6 +824,7 @@ class StockPredictor:
             "predicted_low": pred_low,
             "predicted_close": pred_close,
             "predicted_change": pred_change,
+            "predicted_open": pred_open,
             "up_probability": up_probability,
             "down_probability": 1 - up_probability,
         }
@@ -982,70 +995,73 @@ def run_strategy_development_action(symbol, file_date):
     # if "Date" in df.columns:
     #     df["Date"] = pd.to_datetime(df["Date"])
     #     df.set_index("Date", inplace=True)
-    high_low = df["High"] - df["Low"]
-    high_close = np.abs(df["High"] - df["Close"].shift())
-    low_close = np.abs(df["Low"] - df["Close"].shift())
-    ranges = pd.concat([high_low, high_close, low_close], axis=1)
-    true_range = np.max(ranges, axis=1)
-    df["ATR"] = true_range.rolling(window=14).mean().shift(1)
-    df["MA5"] = df["Close"].rolling(5).mean().shift(1)
-    df["MA10"] = df["Close"].rolling(10).mean().shift(1)
-    df["MA20"] = df["Close"].rolling(20).mean().shift(1)
-    df["HighMean"] = df["High"].rolling(5).mean().shift(1)
-    df["HighStd"] = df["High"].rolling(5).std().shift(1)
-    df["HighMax"] = df["High"].rolling(5).max().shift(1)
-    # 指数移动平均线
-    df["EMA12"] = df["Close"].ewm(span=12, adjust=False).mean().shift(1)
-    df["EMA26"] = df["Close"].ewm(span=26, adjust=False).mean().shift(1)
-    df["MACD"] = df["EMA12"] - df["EMA26"]
-    lags = [1, 5, 30]
-    for lag in lags:
-        df[f"Close_LAG_{lag}"] = df["Close"].shift(lag)
-        df[f"Volume_LAG_{lag}"] = df["Volume"].shift(lag)
-        df[f"High_LAG_{lag}"] = df["High"].shift(lag)
-    delta = df["Close"].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-    rs = gain / loss
-    df["RSI"] = 100 - (100 / (1 + rs)).shift(1)
+    # high_low = df["High"] - df["Low"]
+    # high_close = np.abs(df["High"] - df["Close"].shift())
+    # low_close = np.abs(df["Low"] - df["Close"].shift())
+    # ranges = pd.concat([high_low, high_close, low_close], axis=1)
+    # true_range = np.max(ranges, axis=1)
+    # # delta = df["Close"].diff().shift(1)
+    # # gain = (delta.where(delta > 0, 0)).rolling(window=14).mean().shift(1)
+    # # loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean().shift(1)
+    # # rs = gain / loss
+    # # df["RSI"] = 100 - (100 / (1 + rs))
+    # # 移动平均线
+    # df["MA50"] = df["Close"].rolling(window=50).mean().shift(1)
+    # # 指数移动平均线
+    # df["ATR"] = true_range.rolling(window=14).mean().shift(1)
+    # df["MA5"] = df["Close"].rolling(5).mean().shift(1)
+    # df["MA10"] = df["Close"].rolling(10).mean().shift(1)
+    # df["MA20"] = df["Close"].rolling(20).mean().shift(1)
+    # df["HighMean"] = df["High"].rolling(5).mean().shift(1)
+    # df["HighStd"] = df["High"].rolling(5).std().shift(1)
+    # df["HighMax"] = df["High"].rolling(5).max().shift(1)
+    # df["HighMin"] = df["High"].rolling(5).min().shift(1)
+    # df["LowMean"] = df["Low"].rolling(5).mean().shift(1)
+    # df["LowStd"] = df["Low"].rolling(5).std().shift(1)
+    # df["LowMin"] = df["Low"].rolling(5).min().shift(1)
+    # df["LowMax"] = df["Low"].rolling(5).max().shift(1)
+    # df["CloseMean"] = df["Close"].rolling(5).mean().shift(1)
+    # df["CloseStd"] = df["Close"].rolling(5).std().shift(1)
+    # df["CloseMax"] = df["Close"].rolling(5).max().shift(1)
+    # df["CloseMin"] = df["Close"].rolling(5).min().shift(1)
+    # df["OpenMean"] = df["Open"].rolling(5).mean().shift(1)
+    # df["OpenStd"] = df["Open"].rolling(5).std().shift(1)
+    # df["OpenMax"] = df["Open"].rolling(5).max().shift(1)
+    # df["OpenMin"] = df["Open"].rolling(5).min().shift(1)
+    # df["VolumeMean"] = df["Volume"].rolling(5).mean().shift(1)
+    # df["VolumeStd"] = df["Volume"].rolling(5).std().shift(1)
+    # df["VolumeMax"] = df["Volume"].rolling(5).max().shift(1)
+    # df["VolumeMin"] = df["Volume"].rolling(5).min().shift(1)
+    # df["AmountMean"] = df["Amount"].rolling(5).mean().shift(1)
+    # df["AmountStd"] = df["Amount"].rolling(5).std().shift(1)
+    # df["AmountMax"] = df["Amount"].rolling(5).max().shift(1)
+    # df["AmountMin"] = df["Amount"].rolling(5).min().shift(1)
+
+    # # 指数移动平均线
+    # df["EMA12"] = df["Close"].ewm(span=12, adjust=False).mean().shift(1)
+    # df["EMA26"] = df["Close"].ewm(span=26, adjust=False).mean().shift(1)
+    # df["MACD"] = df["EMA12"] - df["EMA26"]
+    # lags = [1, 5, 30]
+    # for lag in lags:
+    #     df[f"Close_LAG_{lag}"] = df["Close"].shift(lag)
+    #     df[f"Volume_LAG_{lag}"] = df["Volume"].shift(lag)
+    #     df[f"High_LAG_{lag}"] = df["High"].shift(lag)
+    #     df[f"Low_LAG_{lag}"] = df["Low"].shift(lag)
+    #     df[f"Open_LAG_{lag}"] = df["Open"].shift(lag)
+    #     df[f"Amount_LAG_{lag}"] = df["Amount"].shift(lag)
+    # delta = df["Close"].diff()
+    # gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+    # loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+    # rs = gain / loss
+    # df["RSI"] = 100 - (100 / (1 + rs)).shift(1)
     # 3. 波动率
-    df["Returns"] = df["Close"].pct_change().shift(1)
-    df["Volatility"] = df["Returns"].rolling(20).std()
+    # df["Returns"] = df["Close"].pct_change().shift(1)
+    # df["Volatility"] = df["Returns"].rolling(20).std().shift(1)
     # 4. 日期特征
-    df["Date1"] = pd.to_datetime(df["Date"])
-    df["DayOfWeek"] = df["Date1"].dt.dayofweek
-    df["Month"] = df["Date1"].dt.month
-    df["Quarter"] = df["Date1"].dt.quarter
-    # 移动平均线
-    df["MA10"] = df["Close"].rolling(window=10).mean()
-    df["MA50"] = df["Close"].rolling(window=50).mean()
-
-    # 指数移动平均线
-    df["EMA12"] = df["Close"].ewm(span=12, adjust=False).mean()
-    df["EMA26"] = df["Close"].ewm(span=26, adjust=False).mean()
-
-    # MACD
-    df["MACD"] = df["EMA12"] - df["EMA26"]
-    df["MACD_Signal"] = df["MACD"].ewm(span=9, adjust=False).mean()
-    df["MACD_Hist"] = df["MACD"] - df["MACD_Signal"]
-
-    # RSI
-    delta = df["Close"].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    rs = gain / loss
-    df["RSI"] = 100 - (100 / (1 + rs))
-
-    # 动量指标
-    df["Momentum"] = df["Close"] / df["Close"].shift(10) - 1
-
-    # ATR (平均真实波幅)
-    high_low = df["High"] - df["Low"]
-    high_close = np.abs(df["High"] - df["Close"].shift())
-    low_close = np.abs(df["Low"] - df["Close"].shift())
-    ranges = pd.concat([high_low, high_close, low_close], axis=1)
-    true_range = np.max(ranges, axis=1)
-    df["ATR"] = true_range.rolling(window=14).mean()
+    # df["Date1"] = pd.to_datetime(df["Date"])
+    # df["DayOfWeek"] = df["Date1"].dt.dayofweek.shift(1)
+    # df["Month"] = df["Date1"].dt.month.shift(1)
+    # df["Quarter"] = df["Date1"].dt.quarter.shift(1)
     predictor.df = df
     df_processed = predictor.prepare_features_and_targets(df)
     predictor.df_processed = df_processed  # 保存处理后的数据供后续使用
@@ -1070,16 +1086,16 @@ def run_strategy_development_action(symbol, file_date):
     # predictor.train_final_models(df_processed)
 
     # 7. 预测最新日期
-    print("预测下下个交易日...")
+    print("预测最新日期...")
     # latest_data = df_processed.iloc[-2:]  # 获取最新数据
     # print(latest_data)
     latest_data = df.iloc[-1:]  # 获取最新数据
-    # print(latest_data)
+    print("----------")
+    print(latest_data)
     latest_pred = predictor.predict_day(latest_data)
     close_value_iloc = latest_data["Close"].iloc[0]
-    high_value_iloc = close_value_iloc * 1.1 * 1.1
-    low_value_iloc = close_value_iloc * 0.9 * 0.9
-
+    high_value_iloc = close_value_iloc * 1.1
+    low_value_iloc = close_value_iloc * 0.9
     # 添加日期信息
     if "Date" in df.columns:
         latest_date = pd.to_datetime(df["Date"]).max().strftime("%Y%m%d")
@@ -1099,127 +1115,23 @@ def run_strategy_development_action(symbol, file_date):
         "data_points": {"original": len(df), "processed": len(df_processed)},
     }
 
-    # print("\n=== 策略评估结果 ===")
-    # print(f"股票代码: {result['symbol']}")
-    # print(f"模型: {result['model_used']}")
-    # print(
-    #     f"数据点: 原始={result['data_points']['original']}, 处理后={result['data_points']['processed']}"
-    # )
-
-    # print("\n回测指标:")
-    # module_dec = "回测指标:"
-    # latest_pred = self.predict_day(next_df)
-    # latest_pred = predictor.predict_day_next(result)
-    # latest_data = df.iloc[-1:]  # 获取最新数据
-    # print(latest_data)
-    # latest_data["High"] = latest_pred["predicted_high"]
-    # latest_data["Low"] = latest_pred["predicted_low"]
-    # latest_data["Close"] = latest_pred["predicted_close"]
-    # latest_data["Change"] = latest_pred["predicted_change"]
-    # df.loc[df.index[-1], "target_high"] = latest_pred["predicted_high"]
-    # df.loc[df.index[-1], "target_low"] = latest_pred["predicted_low"]
-    # df.loc[df.index[-1], "target_close"] = latest_pred["predicted_close"]
-    # df.loc[df.index[-1], "target_change"] = latest_pred["predicted_change"]
-    newLastDate = pd.to_datetime(df["Date"]).max() + pd.DateOffset(days=1)
-    newLastDate = newLastDate.strftime("%Y-%m-%d")
-    newLastData = latest_data.copy()
-    newLastData["Date"] = newLastDate
-    newLastData["High"] = latest_pred["predicted_high"]
-    newLastData["Low"] = latest_pred["predicted_low"]
-    newLastData["Close"] = latest_pred["predicted_close"]
-    newLastData["Change"] = latest_pred["predicted_change"]
-    newLastData["Open"] = latest_data["Close"]
-    # print(newLastData)
-    df = pd.concat([df, newLastData], ignore_index=True)
-    high_low = df["High"] - df["Low"]
-    high_close = np.abs(df["High"] - df["Close"].shift())
-    low_close = np.abs(df["Low"] - df["Close"].shift())
-    ranges = pd.concat([high_low, high_close, low_close], axis=1)
-    true_range = np.max(ranges, axis=1)
-    df["ATR"] = true_range.rolling(window=14).mean().shift(1)
-    df["MA5"] = df["Close"].rolling(5).mean().shift(1)
-    df["MA10"] = df["Close"].rolling(10).mean().shift(1)
-    df["MA20"] = df["Close"].rolling(20).mean().shift(1)
-    df["HighMean"] = df["High"].rolling(5).mean().shift(1)
-    df["HighStd"] = df["High"].rolling(5).std().shift(1)
-    df["HighMax"] = df["High"].rolling(5).max().shift(1)
-    # 指数移动平均线
-    df["EMA12"] = df["Close"].ewm(span=12, adjust=False).mean().shift(1)
-    df["EMA26"] = df["Close"].ewm(span=26, adjust=False).mean().shift(1)
-    df["MACD"] = df["EMA12"] - df["EMA26"]
-    lags = [1, 5, 30]
-    for lag in lags:
-        df[f"Close_LAG_{lag}"] = df["Close"].shift(lag)
-        df[f"Volume_LAG_{lag}"] = df["Volume"].shift(lag)
-        df[f"High_LAG_{lag}"] = df["High"].shift(lag)
-    delta = df["Close"].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-    rs = gain / loss
-    df["RSI"] = 100 - (100 / (1 + rs)).shift(1)
-    # 3. 波动率
-    df["Returns"] = df["Close"].pct_change().shift(1)
-    df["Volatility"] = df["Returns"].rolling(20).std()
-    # 4. 日期特征
-    df["Date1"] = pd.to_datetime(df["Date"])
-    df["DayOfWeek"] = df["Date1"].dt.dayofweek
-    df["Month"] = df["Date1"].dt.month
-    df["Quarter"] = df["Date1"].dt.quarter
-    predictor.df = df
-    df_processed = predictor.prepare_features_and_targets(df)
-    predictor.df_processed = df_processed  # 保存处理后的数据供后续使用
-    print(f"特征工程完成，剩余 {len(df_processed)} 条有效记录")
-
-    # 显示数据日期范围
-    if "Date" in df_processed.columns:
-        start_date = df_processed["Date"].min().strftime("%Y%m%d")
-        end_date = df_processed["Date"].max().strftime("%Y%m%d")
-        print(f"数据日期范围: {start_date} 到 {end_date}")
-
-    # 4. 执行滚动窗口回测
-    # print("执行滚动窗口回测...")
-    # backtest_results = predictor.walk_forward_backtest(df_processed)
-    latest_data = df.iloc[-1:]  # 获取最新数据
-    print("-------------------------")
-    print(df.iloc[-2:])
-    print(latest_pred)
-    print(latest_data)
-    latest_pred = predictor.predict_day(newLastData)
-    # 9. 输出结果
-    result = {
-        "symbol": symbol,
-        "model_used": "LightGBM",
-        "features": predictor.feature_columns,
-        "backtest_metrics": metrics,
-        "latest_prediction": latest_pred,
-        "data_points": {"original": len(df), "processed": len(df_processed)},
-    }
     module_dec = ""
-    # for metric, value in result["backtest_metrics"].items():
-    #     if "mape" in metric:
-    #         module_dec += f"  {metric}: {value:.2f}%"
-    #     elif "r2" in metric:
-    #         module_dec += f"  {metric}: {value:.4f}"
-    #     else:
-    #         module_dec += f"  {metric}: {value:.6f}"
-
-    # print("\n下下个交易日预测:")
-    # if "prediction_date" in result["latest_prediction"]:
-    #     print(f"  预测日期: {result['latest_prediction']['prediction_date']}")
-    # print(f"  预测最高价: {result['latest_prediction']['predicted_high']:.4f}")
-    # print(f"  预测最低价: {result['latest_prediction']['predicted_low']:.4f}")
-    # print(f"  预测收盘价: {result['latest_prediction']['predicted_close']:.4f}")
-    # print(f"  预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%")
-    # print(f"  上涨概率: {result['latest_prediction']['up_probability']:.4f}")
-    # print(f"  下跌概率: {result['latest_prediction']['down_probability']:.4f}")
+    for metric, value in result["backtest_metrics"].items():
+        if "mape" in metric:
+            module_dec += f"  {metric}: {value:.2f}%"
+        elif "r2" in metric:
+            module_dec += f"  {metric}: {value:.4f}"
+        else:
+            module_dec += f"  {metric}: {value:.6f}"
 
     return (
         module_dec
         + f"""  
-      预测结果 (下下个交易日):
-      预测最高价: {result['latest_prediction']['predicted_high']:.4f}
+      预测结果:
       理论最高价: {high_value_iloc}
+      预测最高价: {result['latest_prediction']['predicted_high']:.4f}
       预测最低价: {result['latest_prediction']['predicted_low']:.4f}
+      预测开盘价: {result['latest_prediction']['predicted_open']:.4f}
       理论最低价: {low_value_iloc}
       预测收盘价: {result['latest_prediction']['predicted_close']:.4f}
       预测涨跌幅: {result['latest_prediction']['predicted_change']:.4f}%

@@ -36,8 +36,8 @@ def calculate_technical_indicators(
 
     # MACD
     df["MACD"] = df["EMA12"] - df["EMA26"]
-    df["MACD_Signal"] = df["MACD"].ewm(span=9, adjust=False).mean()
-    df["MACD_Hist"] = df["MACD"] - df["MACD_Signal"]
+    # df["MACD_Signal"] = df["MACD"].ewm(span=9, adjust=False).mean()
+    # df["MACD_Hist"] = df["MACD"] - df["MACD_Signal"]
 
     # RSI
     delta = df["Close"].diff()
@@ -47,7 +47,7 @@ def calculate_technical_indicators(
     df["RSI"] = 100 - (100 / (1 + rs))
 
     # 动量指标
-    df["Momentum"] = df["Close"] / df["Close"].shift(10) - 1
+    # df["Momentum"] = df["Close"] / df["Close"].shift(10) - 1
 
     # ATR (平均真实波幅)
     high_low = df["High"] - df["Low"]
@@ -59,8 +59,8 @@ def calculate_technical_indicators(
 
     # 重置索引（将索引变回普通列）
     df.reset_index(inplace=True)
-    os.makedirs(f"output/{symbol}/{file_date}", exist_ok=True)
-    df.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
+    # os.makedirs(f"output/{symbol}/{file_date}", exist_ok=True)
+    # df.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
 
     return f"""
     数据总记录数:{len(df)}\n
@@ -116,12 +116,12 @@ def get_china_stock_data(
     """
     dfsh = ak.stock_zh_index_daily(symbol="sh000001")
     dfsh["date"] = pd.to_datetime(dfsh["date"])
-    dfsh.set_index("date", inplace=True)
-    dfsh.sort_index(ascending=True, inplace=True)
-    mask = (dfsh.index >= pd.to_datetime(start_date)) & (
-        dfsh.index <= pd.to_datetime(end_date)
-    )
-    dfsh = dfsh.loc[mask]
+    # dfsh.set_index("date", inplace=True)
+    # dfsh.sort_index(ascending=True, inplace=True)
+    # mask = (dfsh.index >= pd.to_datetime(start_date)) & (
+    #     dfsh.index <= pd.to_datetime(end_date)
+    # )
+    # dfsh = dfsh.loc[mask]
     dfsh = dfsh.rename(
         columns={
             "date": "日期",
@@ -134,9 +134,9 @@ def get_china_stock_data(
     )
 
     # 添加技术指标
-    dfsh["5日均线"] = dfsh["收盘"].rolling(window=5).mean()
+    # dfsh["5日均线"] = dfsh["收盘"].rolling(window=5).mean()
     # dfsh["10日均线"] = dfsh["收盘"].rolling(window=10).mean()
-    dfsh["涨跌幅"] = dfsh["收盘"].pct_change() * 100
+    # dfsh["涨跌幅"] = dfsh["收盘"].pct_change() * 100
     # dfsz = ak.fund_etf_hist_em(
     #     symbol="sz399001", period="daily", start_date="20250701", end_date=end_date
     # )
@@ -144,12 +144,12 @@ def get_china_stock_data(
     # dfsh.set_index("日期", inplace=True)
     dfsz = ak.stock_zh_index_daily(symbol="sz399001")
     dfsz["date"] = pd.to_datetime(dfsz["date"])
-    dfsz.set_index("date", inplace=True)
-    dfsz.sort_index(ascending=True, inplace=True)
-    mask = (dfsz.index >= pd.to_datetime(start_date)) & (
-        dfsz.index <= pd.to_datetime(end_date)
-    )
-    dfsz = dfsz.loc[mask]
+    # dfsz.set_index("date", inplace=True)
+    # dfsz.sort_index(ascending=True, inplace=True)
+    # mask = (dfsz.index >= pd.to_datetime(start_date)) & (
+    #     dfsz.index <= pd.to_datetime(end_date)
+    # )
+    # dfsz = dfsz.loc[mask]
     dfsz = dfsz.rename(
         columns={
             "date": "日期",
@@ -161,17 +161,20 @@ def get_china_stock_data(
         }
     )
     # 添加技术指标
-    dfsz["5日均线"] = dfsz["收盘"].rolling(window=5).mean()
+    # dfsz["5日均线"] = dfsz["收盘"].rolling(window=5).mean()
     # dfsh["10日均线"] = dfsz["收盘"].rolling(window=10).mean()
-    dfsz["涨跌幅"] = dfsz["收盘"].pct_change() * 100
+    # dfsz["涨跌幅"] = dfsz["收盘"].pct_change() * 100
     max_retries = 3
     for attempt in range(max_retries):
         try:
             print(f"尝试 #{attempt+1} 获取 {symbol} 数据...")
 
             # 获取ETF数据
-            df = ak.fund_etf_hist_em(
-                symbol=symbol, period="daily", start_date=start_date, end_date=end_date
+            df = ak.stock_zh_a_hist(
+                symbol=symbol,
+                start_date=start_date,
+                end_date=end_date,
+                adjust="qfq",  # 后复权
             )
             print(df.columns)
             # 数据清洗
@@ -191,11 +194,33 @@ def get_china_stock_data(
                 },
                 inplace=True,
             )
-
             df["Date"] = pd.to_datetime(df["Date"])
+            os.makedirs(f"output/{symbol}/{file_date}", exist_ok=True)
+            df_dropped = df.drop("股票代码", axis=1)
+            df_dropped.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
+            # if symbol.startswith("6"):
+            #     df1_clean = dfsh.copy()
+            #     df2_clean = df.copy()
+            #     # 将日期列统一命名为 'date'
+            #     df1_clean = df1_clean.rename(columns={"日期": "Date"})
+            #     # 现在合并，只需要指定一个日期列
+            #     merged_df = pd.merge(df1_clean, df2_clean, on="Date", how="inner")
+            #     merged_df.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
+            #     print(len(merged_df), "合并后数据")
+            # else:
+            #     df1_clean = dfsz.copy()
+            #     df2_clean = df.copy()
+            #     print(df1_clean.columns)
+            #     print(df2_clean.columns)
+            #     # 将日期列统一命名为 'date'
+            #     df1_clean = df1_clean.rename(columns={"日期": "Date"})
+            #     # 现在合并，只需要指定一个日期列
+            #     merged_df = pd.merge(df1_clean, df2_clean, on="Date", how="inner")
+            #     merged_df.to_csv(f"output/{symbol}/{file_date}/data.csv", index=False)
+            #     print(len(merged_df), "合并后数据")
+
             df.set_index("Date", inplace=True)
             df.sort_index(ascending=True, inplace=True)
-
             # 添加技术指标
             # df = calculate_technical_indicators(df)
 

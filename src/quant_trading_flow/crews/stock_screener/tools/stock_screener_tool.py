@@ -31,11 +31,6 @@ def get_filtered_stocks():
         "Referer": "https://data.eastmoney.com/",
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        "Origin": "https://data.eastmoney.com",
-        "Connection": "keep-alive",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
     }
 
     # 查询参数

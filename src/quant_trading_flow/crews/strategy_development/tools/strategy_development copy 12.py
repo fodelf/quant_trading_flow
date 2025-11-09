@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 import numpy as np
 from sklearn.ensemble import (
     RandomForestRegressor,
@@ -8,13 +9,10 @@ from sklearn.ensemble import (
 )
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import TimeSeriesSplit, RandomizedSearchCV
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, accuracy_score
 from sklearn.impute import SimpleImputer
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import joblib
-from functools import partial
 
 warnings.filterwarnings("ignore")
 import ta
@@ -23,13 +21,11 @@ import xgboost as xgb
 
 
 class UltimateStockPredictor:
-    def __init__(self, n_jobs=-1):
+    def __init__(self):
         self.models = {}
         self.scalers = {}
         self.imputers = {}
         self.feature_importance = {}
-        self.n_jobs = n_jobs if n_jobs != -1 else joblib.cpu_count()
-        self.best_params = {}
 
     def create_ultimate_features(self, df):
         """创建终极特征"""
@@ -296,37 +292,42 @@ class UltimateStockPredictor:
         df["target_next_next_low"] = df["Low"].shift(-2)
 
         # 涨跌目标
-        df["target_next_next_up"] = (df["Change"].shift(-2) > 0).astype(int)
+        df["target_next_next_up"] = (df["Close"].shift(-2) > df["Close"]).astype(int)
 
-        # # 大幅波动目标 - 更细粒度
-        # df["target_big_up_3pct"] = ((df["Change"].shift(-1)) > 3).astype(int)
-        # df["target_big_up_5pct"] = ((df["Change"].shift(-1)) > 5).astype(int)
-        # df["target_big_up_7pct"] = ((df["Change"].shift(-1)) > 7).astype(int)
-        # df["target_big_up_10pct"] = ((df["Change"].shift(-1)) > 9.5).astype(int)
-        # df["target_big_down_3pct"] = ((df["Change"].shift(-1)) < -3).astype(int)
-        # df["target_big_down_5pct"] = ((df["Change"].shift(-1)) < -5).astype(int)
-
-        # df["target_next_next_big_up_3pct"] = ((df["Change"].shift(-2)) > 3).astype(int)
-        # df["target_next_next_big_up_5pct"] = ((df["Change"].shift(-2)) > 5).astype(int)
-        # df["target_next_next_big_up_7pct"] = ((df["Change"].shift(-2)) > 7).astype(int)
-        # df["target_next_next_big_up_10pct"] = ((df["Change"].shift(-2)) > 9.5).astype(
-        #     int
-        # )
-        # df["target_next_next_big_down_3pct"] = ((df["Change"].shift(-2)) < -3).astype(
-        #     int
-        # )
-        # df["target_next_next_big_down_5pct"] = ((df["Change"].shift(-2)) < -5).astype(
-        #     int
-        # )
+        # 大幅波动目标 - 更细粒度
+        df["target_big_up_3pct"] = (
+            (df["Close"].shift(-1) / df["Close"] - 1) > 0.03
+        ).astype(int)
+        df["target_big_up_5pct"] = (
+            (df["Close"].shift(-1) / df["Close"] - 1) > 0.05
+        ).astype(int)
+        df["target_big_up_7pct"] = (
+            (df["Close"].shift(-1) / df["Close"] - 1) > 0.07
+        ).astype(int)
+        df["target_big_up_10pct"] = (
+            (df["Close"].shift(-1) / df["Close"] - 1) > 0.10
+        ).astype(int)
+        df["target_big_down_3pct"] = (
+            (df["Close"].shift(-1) / df["Close"] - 1) < -0.03
+        ).astype(int)
+        df["target_big_down_5pct"] = (
+            (df["Close"].shift(-1) / df["Close"] - 1) < -0.05
+        ).astype(int)
 
         # 涨停目标
-        # df["target_limit_up"] = (df["Change"].shift(-1) > 9.5).astype(int)
-        df["target_limit_up_next_next"] = ((df["Change"].shift(-2) > 9.5)).astype(int)
+        df["target_limit_up"] = (
+            (df["High"].shift(-1) == df["Low"].shift(-1))
+            & (df["Change"].shift(-1) > 9.5)
+        ).astype(int)
+        df["target_limit_up_next_next"] = (
+            (df["High"].shift(-2) == df["Low"].shift(-2))
+            & (df["Change"].shift(-2) > 9.5)
+        ).astype(int)
 
         # 连续涨停目标
-        # df["target_consecutive_limit"] = (
-        #     (df["target_limit_up"] == 1) & (df["is_limit_up"] == 1)
-        # ).astype(int)
+        df["target_consecutive_limit"] = (
+            (df["target_limit_up"] == 1) & (df["is_limit_up"] == 1)
+        ).astype(int)
 
         return df
 
@@ -460,174 +461,91 @@ class UltimateStockPredictor:
 
         return features_df
 
-    def dynamic_parameter_tuning(self, X, y, is_classification=False):
-        """动态参数调优"""
-        if len(y) < 100:
-            return None
+    def train_ultimate_models(self, X, y_dict):
+        """训练终极模型"""
+        print("训练终极预测模型...")
 
-        # 清理数据
-        mask = ~(y.isna() | X.isna().any(axis=1))
-        X_clean = X[mask]
-        y_clean = y[mask]
+        for target_name, y in y_dict.items():
+            if len(y) < 100:
+                continue
 
-        if len(X_clean) < 50:
-            return None
+            # 清理数据
+            mask = ~(y.isna() | X.isna().any(axis=1))
+            X_clean = X[mask]
+            y_clean = y[mask]
 
-        # 创建imputer
-        imputer = SimpleImputer(strategy="median")
-        X_imputed = imputer.fit_transform(X_clean)
+            if len(X_clean) < 50:
+                continue
 
-        if is_classification:
-            from sklearn.ensemble import RandomForestClassifier
+            # 创建imputer
+            imputer = SimpleImputer(strategy="median")
+            X_imputed = imputer.fit_transform(X_clean)
 
-            param_dist = {
-                "n_estimators": [100, 200, 300],
-                "max_depth": [10, 15, 20, None],
-                "min_samples_split": [2, 5, 10],
-                "min_samples_leaf": [1, 2, 4],
-                "max_features": ["sqrt", "log2", None],
-            }
-
-            base_model = RandomForestClassifier(random_state=42, n_jobs=1)
-            scoring = "accuracy"
-        else:
-            # 回归问题参数空间
-            rf_params = {
-                "n_estimators": [100, 200, 300],
-                "max_depth": [10, 15, 20, None],
-                "min_samples_split": [2, 5, 10],
-                "min_samples_leaf": [1, 2, 4],
-                "max_features": [0.6, 0.8, 1.0],
-            }
-
-            xgb_params = {
-                "n_estimators": [100, 200, 300],
-                "max_depth": [3, 6, 9],
-                "learning_rate": [0.01, 0.05, 0.1],
-                "subsample": [0.8, 0.9, 1.0],
-                "colsample_bytree": [0.8, 0.9, 1.0],
-            }
-
-            base_model = VotingRegressor(
-                [
-                    ("rf", RandomForestRegressor(random_state=42, n_jobs=1)),
-                    ("xgb", xgb.XGBRegressor(random_state=42, n_jobs=1)),
-                    ("hgb", HistGradientBoostingRegressor(random_state=42)),
-                ]
-            )
-            scoring = "neg_mean_absolute_error"
-
-        # 时间序列交叉验证
-        tscv = TimeSeriesSplit(n_splits=3)  # 减少分割数以加快速度
-
-        if is_classification:
-            search = RandomizedSearchCV(
-                base_model,
-                param_dist,
-                n_iter=10,
-                cv=tscv,
-                scoring=scoring,
-                n_jobs=1,
-                random_state=42,
-            )
-        else:
-            # 对于回归问题，我们分别调优每个模型的参数
-            best_models = []
-
-            # 随机森林调优
-            rf_search = RandomizedSearchCV(
-                RandomForestRegressor(random_state=42, n_jobs=1),
-                rf_params,
-                n_iter=5,
-                cv=tscv,
-                scoring=scoring,
-                n_jobs=1,
-                random_state=42,
-            )
-            rf_search.fit(X_imputed, y_clean)
-            best_rf = RandomForestRegressor(
-                **rf_search.best_params_, random_state=42, n_jobs=1
-            )
-            best_models.append(("rf", best_rf))
-
-            # XGBoost调优
-            xgb_search = RandomizedSearchCV(
-                xgb.XGBRegressor(random_state=42, n_jobs=1),
-                xgb_params,
-                n_iter=5,
-                cv=tscv,
-                scoring=scoring,
-                n_jobs=1,
-                random_state=42,
-            )
-            xgb_search.fit(X_imputed, y_clean)
-            best_xgb = xgb.XGBRegressor(
-                **xgb_search.best_params_, random_state=42, n_jobs=1
-            )
-            best_models.append(("xgb", best_xgb))
-
-            # HistGradientBoosting
-            best_hgb = HistGradientBoostingRegressor(
-                max_iter=200, max_depth=8, learning_rate=0.05, random_state=42
-            )
-            best_models.append(("hgb", best_hgb))
-
-            base_model = VotingRegressor(best_models, weights=[2, 3, 2])
-
-        if not is_classification:
-            # 对于回归问题，我们已经完成了调优
-            final_model = base_model
-        else:
-            search.fit(X_imputed, y_clean)
-            final_model = search.best_estimator_
-
-        return {
-            "model": final_model,
-            "imputer": imputer,
-            "best_params": (
-                getattr(search, "best_params_", {})
-                if is_classification
-                else {
-                    "rf_params": rf_search.best_params_,
-                    "xgb_params": xgb_search.best_params_,
-                }
-            ),
-        }
-
-    def train_single_target(self, target_name, X, y):
-        """并行训练单个目标"""
-        try:
-            is_classification = target_name in [
+            if target_name in [
                 "target_next_next_up",
-                # "target_big_up_3pct",
-                # "target_big_up_5pct",
-                # "target_big_up_7pct",
-                # "target_big_up_10pct",
-                # "target_big_down_3pct",
-                # "target_big_down_5pct",
-                # "target_limit_up",
-                # "target_limit_up_next_next",
-                # "target_consecutive_limit",
-            ]
+                "target_big_up_3pct",
+                "target_big_up_5pct",
+                "target_big_up_7pct",
+                "target_big_up_10pct",
+                "target_big_down_3pct",
+                "target_big_down_5pct",
+                "target_limit_up",
+                "target_limit_up_next_next",
+                "target_consecutive_limit",
+            ]:
+                # 分类问题 - 使用增强随机森林
+                from sklearn.ensemble import RandomForestClassifier
 
-            # 动态参数调优
-            tuned_model = self.dynamic_parameter_tuning(X, y, is_classification)
+                model = RandomForestClassifier(
+                    n_estimators=200,
+                    max_depth=20,
+                    min_samples_split=5,
+                    min_samples_leaf=3,
+                    max_features="sqrt",
+                    random_state=42,
+                    n_jobs=-1,
+                )
+            else:
+                # 回归问题 - 使用终极集成
+                rf = RandomForestRegressor(
+                    n_estimators=200,
+                    max_depth=15,
+                    min_samples_split=5,
+                    min_samples_leaf=3,
+                    max_features=0.8,
+                    random_state=42,
+                    n_jobs=-1,
+                )
 
-            if tuned_model is None:
-                return None
+                # 优化的XGBoost
+                xgb_model = xgb.XGBRegressor(
+                    n_estimators=200,
+                    max_depth=8,
+                    learning_rate=0.05,
+                    subsample=0.8,
+                    colsample_bytree=0.8,
+                    reg_alpha=0.1,
+                    reg_lambda=0.1,
+                    random_state=42,
+                    n_jobs=-1,
+                )
 
-            model = tuned_model["model"]
-            imputer = tuned_model["imputer"]
-            best_params = tuned_model["best_params"]
+                # 使用HistGradientBoostingRegressor
+                hgb = HistGradientBoostingRegressor(
+                    max_iter=200, max_depth=8, learning_rate=0.05, random_state=42
+                )
 
-            # 时间序列交叉验证评估
-            tscv = TimeSeriesSplit(n_splits=3)
-            X_imputed = imputer.transform(X)
+                model = VotingRegressor(
+                    [("rf", rf), ("xgb", xgb_model), ("hgb", hgb)], weights=[2, 3, 2]
+                )
+
+            # 时间序列交叉验证
+            tscv = TimeSeriesSplit(n_splits=5)
             scores = []
 
             for train_idx, val_idx in tscv.split(X_imputed):
                 X_train, X_val = X_imputed[train_idx], X_imputed[val_idx]
-                y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
+                y_train, y_val = y_clean.iloc[train_idx], y_clean.iloc[val_idx]
 
                 try:
                     # 特征标准化
@@ -637,11 +555,23 @@ class UltimateStockPredictor:
 
                     model.fit(X_train_scaled, y_train)
 
-                    if is_classification:
+                    if target_name in [
+                        "target_next_next_up",
+                        "target_big_up_3pct",
+                        "target_big_up_5pct",
+                        "target_big_up_7pct",
+                        "target_big_up_10pct",
+                        "target_big_down_3pct",
+                        "target_big_down_5pct",
+                        "target_limit_up",
+                        "target_limit_up_next_next",
+                        "target_consecutive_limit",
+                    ]:
                         y_pred = model.predict(X_val_scaled)
                         score = accuracy_score(y_val, y_pred)
                     else:
                         y_pred = model.predict(X_val_scaled)
+                        # 使用对称MAPE
                         smape = 2.0 * np.mean(
                             np.abs(y_val - y_pred)
                             / (np.abs(y_val) + np.abs(y_pred) + 1e-8)
@@ -657,65 +587,18 @@ class UltimateStockPredictor:
                 # 最终模型训练
                 scaler = StandardScaler()
                 X_clean_scaled = scaler.fit_transform(X_imputed)
-                model.fit(X_clean_scaled, y)
 
-                return {
-                    "target_name": target_name,
+                model.fit(X_clean_scaled, y_clean)
+
+                self.models[target_name] = {
                     "model": model,
                     "scaler": scaler,
                     "imputer": imputer,
                     "cv_score": np.mean(scores),
                     "cv_std": np.std(scores),
-                    "best_params": best_params,
                 }
 
-        except Exception as e:
-            print(f"训练目标 {target_name} 时出错: {e}")
-
-        return None
-
-    def train_ultimate_models(self, X, y_dict):
-        """并行训练终极模型"""
-        print("训练终极预测模型...")
-
-        # 准备并行任务
-        tasks = []
-        for target_name, y in y_dict.items():
-            if len(y) < 100:
-                continue
-
-            # 清理数据
-            mask = ~(y.isna() | X.isna().any(axis=1))
-            X_clean = X[mask]
-            y_clean = y[mask]
-
-            if len(X_clean) < 50:
-                continue
-
-            tasks.append((target_name, X_clean, y_clean))
-
-        # 并行训练
-        with ProcessPoolExecutor(max_workers=min(self.n_jobs, len(tasks))) as executor:
-            futures = {
-                executor.submit(
-                    self.train_single_target, target_name, X_clean, y_clean
-                ): target_name
-                for target_name, X_clean, y_clean in tasks
-            }
-
-            for future in as_completed(futures):
-                result = future.result()
-                if result:
-                    target_name = result["target_name"]
-                    self.models[target_name] = {
-                        "model": result["model"],
-                        "scaler": result["scaler"],
-                        "imputer": result["imputer"],
-                        "cv_score": result["cv_score"],
-                        "cv_std": result["cv_std"],
-                    }
-                    self.best_params[target_name] = result["best_params"]
-                    print(f"目标 {target_name}: CV准确率 = {result['cv_score']:.4f}")
+                print(f"目标 {target_name}: CV准确率 = {np.mean(scores):.4f}")
 
     def apply_ultimate_adjustment(self, df, predictions):
         """应用终极调整"""
@@ -725,6 +608,11 @@ class UltimateStockPredictor:
         # 计算涨跌停价格
         limit_up = round(current_close * 1.1, 2)
         limit_down = round(current_close * 0.9, 2)
+
+        # 计算预测边界
+        next_day_lower_bound = current_close * 0.9  # 下一个交易日最低价边界
+        next_next_day_upper_bound = current_close * (1.1**2)  # 下下个交易日最高价边界
+        next_next_day_lower_bound = current_close * (0.9**2)  # 下下个交易日最低价边界
 
         # 技术指标
         rsi_6 = current_data.get("rsi_6", 50)
@@ -811,7 +699,7 @@ class UltimateStockPredictor:
 
         total_bullish = bullish_signals + strong_bullish + extreme_bullish
 
-        # 终极调整逻辑
+        # 通用终极调整逻辑
         if total_bullish >= 15:
             # 极端看涨信号 - 预测接近涨停
             boost_factor = 1.12 + (total_bullish - 15) * 0.005
@@ -854,6 +742,22 @@ class UltimateStockPredictor:
         elif consecutive_ups == 1 and total_bullish >= 8:
             predictions["target_next_next_high"] = min(current_close * 1.08, limit_up)
 
+        # 应用预测边界限制
+        # 下一个交易日最低价边界
+        predictions["target_next_low"] = max(
+            predictions["target_next_low"], next_day_lower_bound
+        )
+
+        # 下下个交易日最高价边界
+        predictions["target_next_next_high"] = min(
+            predictions["target_next_next_high"], next_next_day_upper_bound
+        )
+
+        # 下下个交易日最低价边界
+        predictions["target_next_next_low"] = max(
+            predictions["target_next_next_low"], next_next_day_lower_bound
+        )
+
         # 确保在合理范围内
         for key in ["target_next_low", "target_next_next_low"]:
             predictions[key] = max(min(predictions[key], limit_up), limit_down)
@@ -887,15 +791,15 @@ class UltimateStockPredictor:
 
                 if target_name in [
                     "target_next_next_up",
-                    # "target_big_up_3pct",
-                    # "target_big_up_5pct",
-                    # "target_big_up_7pct",
-                    # "target_big_up_10pct",
-                    # "target_big_down_3pct",
-                    # "target_big_down_5pct",
-                    # "target_limit_up",
-                    # "target_limit_up_next_next",
-                    # "target_consecutive_limit",
+                    "target_big_up_3pct",
+                    "target_big_up_5pct",
+                    "target_big_up_7pct",
+                    "target_big_up_10pct",
+                    "target_big_down_3pct",
+                    "target_big_down_5pct",
+                    "target_limit_up",
+                    "target_limit_up_next_next",
+                    "target_consecutive_limit",
                 ]:
                     # 分类预测
                     if hasattr(model, "predict_proba"):
@@ -929,15 +833,15 @@ class UltimateStockPredictor:
                 current_price = df["Close"].iloc[-1]
                 if target_name in [
                     "target_next_next_up",
-                    # "target_big_up_3pct",
-                    # "target_big_up_5pct",
-                    # "target_big_up_7pct",
-                    # "target_big_up_10pct",
-                    # "target_big_down_3pct",
-                    # "target_big_down_5pct",
-                    # "target_limit_up",
-                    # "target_limit_up_next_next",
-                    # "target_consecutive_limit",
+                    "target_big_up_3pct",
+                    "target_big_up_5pct",
+                    "target_big_up_7pct",
+                    "target_big_up_10pct",
+                    "target_big_down_3pct",
+                    "target_big_down_5pct",
+                    "target_limit_up",
+                    "target_limit_up_next_next",
+                    "target_consecutive_limit",
                 ]:
                     predictions[target_name] = 0.5
                 elif "low" in target_name:
@@ -959,15 +863,15 @@ class UltimateStockPredictor:
             # 基础置信度
             if target_name in [
                 "target_next_next_up",
-                # "target_big_up_3pct",
-                # "target_big_up_5pct",
-                # "target_big_up_7pct",
-                # "target_big_up_10pct",
-                # "target_big_down_3pct",
-                # "target_big_down_5pct",
-                # "target_limit_up",
-                # "target_limit_up_next_next",
-                # "target_consecutive_limit",
+                "target_big_up_3pct",
+                "target_big_up_5pct",
+                "target_big_up_7pct",
+                "target_big_up_10pct",
+                "target_big_down_3pct",
+                "target_big_down_5pct",
+                "target_limit_up",
+                "target_limit_up_next_next",
+                "target_consecutive_limit",
             ]:
                 base_conf = max(0.5, min(0.95, cv_score))
             else:
@@ -984,9 +888,9 @@ class UltimateStockPredictor:
         return predictions, confidence, total_bullish, strong_bullish, extreme_bullish
 
 
-def run_strategy_development(symbol, file_date, n_jobs=4):
+def run_strategy_development(symbol, file_date):
     """
-    并行化终极策略开发函数
+    终极策略开发函数
     """
     file_path = f"output/{symbol}/{file_date}/data.csv"
 
@@ -998,10 +902,9 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
 
         print(f"📊 加载数据: {len(df)} 条记录")
         print(f"📅 时间范围: {df['Date'].min()} 到 {df['Date'].max()}")
-        print(f"⚡ 使用并行计算: {n_jobs} 个工作进程")
 
         # 初始化终极预测器
-        predictor = UltimateStockPredictor(n_jobs=n_jobs)
+        predictor = UltimateStockPredictor()
 
         # 计算终极特征
         print("🔧 计算终极技术指标...")
@@ -1019,11 +922,10 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
             "target_next_next_high": df_targets["target_next_next_high"],
             "target_next_next_low": df_targets["target_next_next_low"],
             "target_next_next_up": df_targets["target_next_next_up"],
-            # "target_limit_up_next_next": df_targets["target_limit_up_next_next"],
-            # "target_big_up_5pct": df_targets["target_big_up_5pct"],
-            # "target_big_up_7pct": df_targets["target_big_up_7pct"],
-            # "target_big_up_10pct": df_targets["target_big_up_10pct"],
-            # "target_limit_up": df_targets["target_limit_up"],
+            "target_big_up_5pct": df_targets["target_big_up_5pct"],
+            "target_big_up_7pct": df_targets["target_big_up_7pct"],
+            "target_big_up_10pct": df_targets["target_big_up_10pct"],
+            "target_limit_up": df_targets["target_limit_up"],
         }
 
         # 清理数据
@@ -1047,11 +949,6 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
         if not predictor.models:
             raise ValueError("模型训练失败")
 
-        # 输出最佳参数
-        print("\n🎯 最佳模型参数:")
-        for target_name, params in predictor.best_params.items():
-            print(f"  {target_name}: {params}")
-
         # 进行终极预测
         print("🎯 进行终极预测...")
         predictions, confidence, total_bullish, strong_bullish, extreme_bullish = (
@@ -1063,7 +960,7 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
         current_date = df["Date"].iloc[-1]
 
         print("\n" + "=" * 80)
-        print(f"🏆 股票 {symbol} 终极分析报告 (并行优化版)")
+        print(f"🏆 股票 {symbol} 终极分析报告")
         print("=" * 80)
         print(f"📅 当前日期: {current_date}")
         print(f"💰 当前收盘价: {current_price:.2f}")
@@ -1081,21 +978,21 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
         print(f"  📈 下下个交易日上涨概率: {predictions['target_next_next_up']:.1%}")
         print(f"    置信度: {confidence['target_next_next_up']:.1%}")
 
-        # # 额外预测
-        # if "target_big_up_5pct" in predictions:
-        #     print(
-        #         f"  ⚡ 下一个交易日大涨(>5%)概率: {predictions['target_big_up_5pct']:.1%}"
-        #     )
-        # if "target_big_up_7pct" in predictions:
-        #     print(
-        #         f"  ⚡ 下一个交易日大涨(>7%)概率: {predictions['target_big_up_7pct']:.1%}"
-        #     )
-        # if "target_big_up_10pct" in predictions:
-        #     print(
-        #         f"  ⚡ 下一个交易日大涨(>10%)概率: {predictions['target_big_up_10pct']:.1%}"
-        #     )
-        # if "target_limit_up" in predictions:
-        #     print(f"  🚀 下一个交易日涨停概率: {predictions['target_limit_up']:.1%}")
+        # 额外预测
+        if "target_big_up_5pct" in predictions:
+            print(
+                f"  ⚡ 下一个交易日大涨(>5%)概率: {predictions['target_big_up_5pct']:.1%}"
+            )
+        if "target_big_up_7pct" in predictions:
+            print(
+                f"  ⚡ 下一个交易日大涨(>7%)概率: {predictions['target_big_up_7pct']:.1%}"
+            )
+        if "target_big_up_10pct" in predictions:
+            print(
+                f"  ⚡ 下一个交易日大涨(>10%)概率: {predictions['target_big_up_10pct']:.1%}"
+            )
+        if "target_limit_up" in predictions:
+            print(f"  🚀 下一个交易日涨停概率: {predictions['target_limit_up']:.1%}")
 
         # 深度技术分析
         current_data = df_targets.iloc[-1]
@@ -1125,22 +1022,22 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
 
         # 终极交易建议
         up_prob = predictions["target_next_next_up"]
-        # limit_up_prob = predictions.get("target_limit_up", 0)
+        limit_up_prob = predictions.get("target_limit_up", 0)
         big_up_7pct_prob = predictions.get("target_big_up_7pct", 0)
         big_up_10pct_prob = predictions.get("target_big_up_10pct", 0)
 
         print(f"\n💡 终极交易建议:")
-        # if limit_up_prob > 0.3:
-        #     print(f"  🚀 高涨停概率({limit_up_prob:.1%})，强烈买入信号!")
-        # elif big_up_10pct_prob > 0.4:
-        #     print(
-        #         f"  🔥 极高涨幅概率({big_up_10pct_prob:.1%})，目标涨幅{upside_potential:+.1f}%，强烈建议买入"
-        #     )
-        # elif big_up_7pct_prob > 0.5:
-        #     print(
-        #         f"  🔥 高大涨概率({big_up_7pct_prob:.1%})，目标涨幅{upside_potential:+.1f}%，强烈建议买入"
-        #     )
-        if total_bullish >= 15:
+        if limit_up_prob > 0.3:
+            print(f"  🚀 高涨停概率({limit_up_prob:.1%})，强烈买入信号!")
+        elif big_up_10pct_prob > 0.4:
+            print(
+                f"  🔥 极高涨幅概率({big_up_10pct_prob:.1%})，目标涨幅{upside_potential:+.1f}%，强烈建议买入"
+            )
+        elif big_up_7pct_prob > 0.5:
+            print(
+                f"  🔥 高大涨概率({big_up_7pct_prob:.1%})，目标涨幅{upside_potential:+.1f}%，强烈建议买入"
+            )
+        elif total_bullish >= 15:
             print(
                 f"  🟢 极端看涨信号，上涨概率{up_prob:.1%}，目标涨幅{upside_potential:+.1f}%，强烈建议买入"
             )
@@ -1203,7 +1100,6 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
             "avg_confidence": avg_confidence,
             "expected_accuracy": expected_accuracy,
             "data_points": len(X_clean),
-            "best_params": predictor.best_params,
         }
 
         return str(result)
@@ -1217,8 +1113,8 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
 
 
 # if __name__ == "__main__":
-#     # 示例调用 - 使用并行优化版本
-#     result = run_strategy_development_parallel("600977", "2024-01-15", n_jobs=4)
+#     # 示例调用
+#     result = run_strategy_development("600977", "2024-01-15")
 
 #     if result:
 #         print(f"\n✅ 终极预测完成!")
@@ -1226,6 +1122,5 @@ def run_strategy_development(symbol, file_date, n_jobs=4):
 #         print(f"📈 上涨潜力: {result['upside_potential']:+.1f}%")
 #         print(f"🚀 看涨信号强度: {result['signals']['total_bullish']}")
 #         print(f"🎯 预期准确率: {result['expected_accuracy']:.1%}")
-#         print(f"⚡ 并行优化: 使用动态参数调优")
 #     else:
 #         print("❌ 预测失败!")

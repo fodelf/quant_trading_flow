@@ -1,0 +1,291 @@
+{
+  "data": {
+    "list": [
+      {
+        "art_code": "AN202511061776293474",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          {
+            "column_code": "001002005001007",
+            "column_name": "公司注册资本变更"
+          }
+        ],
+        "display_time": "2025-11-06 17:37:06:251",
+        "eiTime": "2025-11-06 17:38:18:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-11-07 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-11-07 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:关于完成减少注册资本工商变更登记的公告",
+        "title_ch": "永太科技:关于完成减少注册资本工商变更登记的公告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202510311772542773",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          {
+            "column_code": "001002006011003",
+            "column_name": "提供/对外担保公告"
+          }
+        ],
+        "display_time": "2025-10-31 15:50:37:471",
+        "eiTime": "2025-10-31 15:52:12:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-11-01 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-11-01 11:59:30",
+        "source_type": "331",
+        "title": "永太科技:关于为子公司提供担保的进展公告",
+        "title_ch": "永太科技:关于为子公司提供担保的进展公告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202510301772024740",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001002002004", "column_name": "股本变动" },
+          { "column_code": "001002007003009005", "column_name": "回购实施公告" }
+        ],
+        "display_time": "2025-10-30 20:03:16:555",
+        "eiTime": "2025-10-30 20:04:29:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-10-31 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-10-31 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:关于部分限制性股票回购注销完成的公告",
+        "title_ch": "永太科技:关于部分限制性股票回购注销完成的公告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202510281770679085",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001002009", "column_name": "董事会决议公告" }
+        ],
+        "display_time": "2025-10-28 17:10:07:272",
+        "eiTime": "2025-10-28 17:11:21:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-10-29 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-10-29 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:第七届董事会第四次会议决议公告",
+        "title_ch": "永太科技:第七届董事会第四次会议决议公告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202510281770679096",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          {
+            "column_code": "001002006011003",
+            "column_name": "提供/对外担保公告"
+          }
+        ],
+        "display_time": "2025-10-28 17:10:07:244",
+        "eiTime": "2025-10-28 17:11:21:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-10-29 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-10-29 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:关于为子公司提供担保的进展公告",
+        "title_ch": "永太科技:关于为子公司提供担保的进展公告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202510281770679083",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001001001004001", "column_name": "三季度报告全文" }
+        ],
+        "display_time": "2025-10-28 17:10:07:208",
+        "eiTime": "2025-10-28 17:10:53:000",
+        "financial_report": {
+          "android_url": "dfcft://router/h5?url=https%3A%2F%2Femh5.eastmoney.com%2Fextend%2Findex.html%3Ffc%3D002326%26fn%3D%E6%B0%B8%E5%A4%AA%E7%A7%91%E6%8A%80%26reportDate%3D2025-09-30%26reportType%3D2025%E4%B8%89%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A%26color%3Dw%23%2FHS_VFR",
+          "ios_url": "eastmoney://wireless/h5/trade?url=https%3A%2F%2Femh5.eastmoney.com%2Fextend%2Findex.html%3Ffc%3D002326%26fn%3D%E6%B0%B8%E5%A4%AA%E7%A7%91%E6%8A%80%26reportDate%3D2025-09-30%26reportType%3D2025%E4%B8%89%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A%26color%3Dw%23%2FHS_VFR",
+          "title": "一张图读懂2025三季度报告"
+        },
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-10-29 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-10-29 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:2025年三季度报告",
+        "title_ch": "永太科技:2025年三季度报告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202509091740781896",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001002006012001003", "column_name": "投资设立公司" }
+        ],
+        "display_time": "2025-09-09 18:34:09:309",
+        "eiTime": "2025-09-09 18:34:38:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-09-10 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-09-10 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:关于设立合资公司并完成工商注册登记的公告",
+        "title_ch": "永太科技:关于设立合资公司并完成工商注册登记的公告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202508271735503204",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001002006009", "column_name": "资金占用" }
+        ],
+        "display_time": "2025-08-27 20:10:17:646",
+        "eiTime": "2025-08-27 20:10:50:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-08-28 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-08-28 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:半年度非经营性资金占用及其他关联资金往来情况汇总表",
+        "title_ch": "永太科技:半年度非经营性资金占用及其他关联资金往来情况汇总表",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202508271735503250",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001001001002005", "column_name": "半年度财务报告" }
+        ],
+        "display_time": "2025-08-27 20:10:17:514",
+        "eiTime": "2025-08-27 20:10:50:000",
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-08-28 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-08-28 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:2025年半年度财务报告",
+        "title_ch": "永太科技:2025年半年度财务报告",
+        "title_en": ""
+      },
+      {
+        "art_code": "AN202508271735503173",
+        "codes": [
+          {
+            "ann_type": "A,SZA",
+            "inner_code": "13682356401286",
+            "market_code": "0",
+            "short_name": "永太科技",
+            "stock_code": "002326"
+          }
+        ],
+        "columns": [
+          { "column_code": "001001001002001", "column_name": "半年度报告全文" }
+        ],
+        "display_time": "2025-08-27 20:10:17:419",
+        "eiTime": "2025-08-27 20:10:50:000",
+        "financial_report": {
+          "android_url": "dfcft://router/h5?url=https%3A%2F%2Femh5.eastmoney.com%2Fextend%2Findex.html%3Ffc%3D002326%26fn%3D%E6%B0%B8%E5%A4%AA%E7%A7%91%E6%8A%80%26reportDate%3D2025-06-30%26reportType%3D2025%E5%8D%8A%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A%26color%3Dw%23%2FHS_VFR",
+          "ios_url": "eastmoney://wireless/h5/trade?url=https%3A%2F%2Femh5.eastmoney.com%2Fextend%2Findex.html%3Ffc%3D002326%26fn%3D%E6%B0%B8%E5%A4%AA%E7%A7%91%E6%8A%80%26reportDate%3D2025-06-30%26reportType%3D2025%E5%8D%8A%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A%26color%3Dw%23%2FHS_VFR",
+          "title": "一张图读懂2025半年度报告"
+        },
+        "language": "0",
+        "listing_state": "0",
+        "notice_date": "2025-08-28 00:00:00",
+        "product_code": "",
+        "sort_date": "2025-08-28 12:00:00",
+        "source_type": "331",
+        "title": "永太科技:2025年半年度报告",
+        "title_ch": "永太科技:2025年半年度报告",
+        "title_en": ""
+      }
+    ],
+    "page_index": 1,
+    "page_size": 10,
+    "total_hits": 2281
+  },
+  "error": "",
+  "success": 1
+}

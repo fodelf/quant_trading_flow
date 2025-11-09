@@ -1,16 +1,13 @@
 risk_management_task:
   description: >
     分析股票{symbol}相关风险
-      1.分析交易数据报告:{data_report}
-      2.分析基本面数据报告:{data_analysis}
-      3.分析政府政策与市场环境报告:{government_affairs}
-      4.分析市场舆情报报告:{public_sentiment}
-      5.分析策略数据报告:{strategy_report}
-      6.分析事件数据报告:{event_data}
-      7.根据以上报告给出风险报告，做出风险评估。
+      1.分析交易数据:{stock_data}
+      2.分析基本面数据：{fundamental_analysis}
+      4.分析事件数据:从{stock_events_analysis}中提取公司公告，相关资讯，与当前{end_date}相关的财经资讯(例如包括但不限于全球贸易，原材料，行业，政策等等与当前股票{symbol}相关的资讯)，去重所有事件因子。
+      5.根据以上数据给出风险报告，做出风险评估。
   expected_output: >
     输出股票{symbol}风险报告。
-      1.给交易数据报告，基本面数据报告，政府政策与市场环境报告，市场舆情报报告，策略数据报告，事件数据报告，以上每一份报告必须出具风险评估，风险详细总结。
+      1.给交易数据，基本面数据，事件数据，以上每一份数据必须提炼总结，出具风险评估，风险详细总结。
       2.以股票代码加股票中文名称加风险报告加{end_date}作为标题
   agent: risk_management
   output_file: output/{symbol}/{file_date}/risk_management.md
@@ -19,15 +16,13 @@ risk_has_management_task:
   description: >
     分析股票{symbol}相关风险
       1.分析交易数据报告:{data_report}
-      2.分析基本面数据报告:{data_analysis}
-      3.分析政府政策与市场环境报告:{government_affairs}
-      4.分析市场舆情报报告:{public_sentiment}
-      5.分析策略数据报告:{strategy_report}
-      6.分析事件数据报告:{event_data}
-      7.根据以上报告给出风险报告，当前股票成本价是{current_price}，买入时间是{handel_time}，制定风险管理计划并监控风险执行。"
+      2.分析政府政策与市场环境报告:{government_affairs}
+      3.分析市场舆情报报告:{public_sentiment}
+      4.分析事件数据报告:{event_data}
+      5.根据以上报告给出风险报告，当前股票成本价是{current_price}，买入时间是{handel_time}，制定风险管理计划并监控风险执行。"
   expected_output: >
     输出股票{symbol}风险报告（报告必须是中文）
-      1.给交易数据报告，基本面数据报告，政府政策与市场环境报告，市场舆情报报告，策略数据报告，事件数据报告，以上每一份报告必须出具风险评估，风险详细总结。
+      1.给交易数据报告，政府政策与市场环境报告，市场舆情报报告，事件数据报告，以上每一份报告必须出具风险评估，风险详细总结。
       2.以股票代码加股票中文名称加风险报告加{end_date}作为标题。
 
   agent: risk_management
